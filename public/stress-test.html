@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Stress Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .controls { margin-bottom: 20px; }
+        .stats { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .viewer { margin: 5px 0; padding: 5px; background: #e0e0e0; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Stress Test</h1>
+    
+    <div class="controls">
+        <button onclick="startTest(10)">Start 10 Viewers</button>
+        <button onclick="startTest(25)">Start 25 Viewers</button>
+        <button onclick="startTest(50)">Start 50 Viewers</button>
+        <button onclick="startTest(100)">Start 100 Viewers</button>
+        <button onclick="stopTest()">Stop All</button>
+    </div>
+    
+    <div class="stats">
+        <div>Active Connections: <span id="activeCount">0</span></div>
+        <div>Messages Sent: <span id="messagesSent">0</span></div>
+        <div>Messages Received: <span id="messagesReceived">0</span></div>
+        <div>Errors: <span id="errorCount">0</span></div>
+    </div>
+    
+    <div id="viewers"></div>
+    
+    <script>
+        let viewers = [];
+        let messagesSent = 0;
+        let messagesReceived = 0;
+        let errorCount = 0;
+        
+        function updateStats() {
+            document.getElementById('activeCount').textContent = viewers.length;
+            document.getElementById('messagesSent').textContent = messagesSent;
+            document.getElementById('messagesReceived').textContent = messagesReceived;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+        
+        function createViewer(id) {
+            const ws = new WebSocket('ws://localhost:3001');
+            const viewerDiv = document.createElement('div');
+            viewerDiv.className = 'viewer';
+            viewerDiv.id = `viewer-${id}`;
+            viewerDiv.innerHTML = `Viewer ${id}: Connecting...`;
+            document.getElementById('viewers').appendChild(viewerDiv);
+            
+            const viewer = {
+                id: id,
+                ws: ws,
+                position: [Math.random() * 10 - 5, Math.random() * 3, Math.random() * 10 - 5],
+                div: viewerDiv,
+                moveInterval: null
+            };
+            
+            ws.onopen = () => {
+                viewerDiv.innerHTML = `Viewer ${id}: Connected`;
+                viewerDiv.style.background = '#d4edda';
+                
+                // Start random movement
+                viewer.moveInterval = setInterval(() => {
+                    // Random walk
+                    viewer.position[0] += (Math.random() - 0.5) * 0.2;
+                    viewer.position[1] += (Math.random() - 0.5) * 0.1;
+                    viewer.position[2] += (Math.random() - 0.5) * 0.2;
+                    
+                    // Send position update
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'position_update',
+                            position: viewer.position
+                        }));
+                        messagesSent++;
+                    }
+                }, 100 + Math.random() * 200); // Random interval 100-300ms
+            };
+            
+            ws.onmessage = (event) => {
+                messagesReceived++;
+                const data = JSON.parse(event.data);
+                viewerDiv.innerHTML = `Viewer ${id}: ${data.type}`;
+            };
+            
+            ws.onerror = (error) => {
+                errorCount++;
+                viewerDiv.innerHTML = `Viewer ${id}: Error`;
+                viewerDiv.style.background = '#f8d7da';
+            };
+            
+            ws.onclose = () => {
+                viewerDiv.innerHTML = `Viewer ${id}: Disconnected`;
+                viewerDiv.style.background = '#fff3cd';
+                if (viewer.moveInterval) {
+                    clearInterval(viewer.moveInterval);
+                }
+            };
+            
+            return viewer;
+        }
+        
+        function startTest(count) {
+            console.log(`Starting stress test with ${count} viewers`);
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const viewer = createViewer(viewers.length + 1);
+                    viewers.push(viewer);
+                    updateStats();
+                }, i * 50); // Stagger connections by 50ms
+            }
+        }
+        
+        function stopTest() {
+            console.log('Stopping all viewers');
+            viewers.forEach(viewer => {
+                if (viewer.ws.readyState === WebSocket.OPEN) {
+                    viewer.ws.close();
+                }
+                if (viewer.moveInterval) {
+                    clearInterval(viewer.moveInterval);
+                }
+                viewer.div.remove();
+            });
+            viewers = [];
+            messagesSent = 0;
+            messagesReceived = 0;
+            errorCount = 0;
+            updateStats();
+        }
+        
+        // Update stats every second
+        setInterval(updateStats, 1000);
+    </script>
+</body>
+</html> 

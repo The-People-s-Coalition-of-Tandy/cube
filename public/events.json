@@ -1,0 +1,27 @@
+{
+  "title": "★ UPCOMING EVENTS ★",
+  "timezone": "Cube Standard Time (CST)",
+  "disclaimer": "** Some events may occur in parallel dimensions",
+  "events": [
+    {
+        "date": "June 28th, 7:15 PM",
+        "name": "Tandy Gauntlet Practice for the Big Stage",
+        "type": "Grayking's Goon",
+        "weird": false
+      },
+
+    {
+      "date": "July 1, 7:15 PM",
+      "name": "2025 General MIDI Competition Live",
+      "type": "Grayking's Choice",
+      "weird": false
+    },
+
+    {
+      "date": "July 15, 7:15 PM",
+      "name": "Shareholder Meeting",
+      "type": "Quarterly Review",
+      "weird": true
+    }
+  ]
+} 

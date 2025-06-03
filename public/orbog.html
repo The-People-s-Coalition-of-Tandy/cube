@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GLSL Shader Demo with Labeled User Orbs</title>
+    <style>
+
+        @font-face {
+            font-family: 'ag5';
+            src: url('./AG5.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'frutiger';
+            src: url('./Frutiger.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'cute';
+            src: url('./CutieTopRegular-VArx.ttf') format('truetype');
+        }
+
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            position: absolute;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            font-family: 'ag5';
+        }
+        #labels {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .label {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            color: white;
+            font-family: 'times new roman';
+            font-size: 14px;
+            text-shadow: 0 0 3px black, 0 0 3px black, 0 0 3px black;
+            white-space: nowrap;
+            transition: opacity 0.3s;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .label::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            width: 1px;
+            height: 15px;
+            background: white;
+            box-shadow: 0 0 3px black;
+        }
+        #streamInfo {
+            display: none !important;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: rgb(133, 133, 133);
+            font-family: 'times new roman';
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            /* background: rgba(0, 0, 0, 0.7); */
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        .live-dot.no-animation {
+            animation: none;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        .stream-time, #date {
+            /* background: rgba(0, 0, 0, 0.7); */
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .stream-time {
+            font-family: 'cute';
+        }
+        .now-playing {
+            /* background: rgba(0, 0, 0, 0.7); */
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #playOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+            cursor: pointer;
+            z-index: 1001;
+            font-family: 'times new roman';
+            overflow: hidden;
+        }
+        
+        #overlayLeft, #overlayRight {
+            position: absolute;
+            top: 0;
+            height: 50%;
+            width: 100%;
+            background: url('./gmbg.gif');
+            /* background: url('./201.jpg'); */
+            /* background: url('./bck-grid.gif'); */
+            transition: transform 2.4s ease-in .5s;
+        }
+        
+        #overlayLeft {
+            top: 0;
+        }
+        
+        #overlayRight {
+            top: 50%;
+        }
+        
+        #playOverlay.hidden #overlayLeft {
+            transform: translateY(-100%);
+        }
+        
+        #playOverlay.hidden #overlayRight {
+            transform: translateY(100%);
+        }
+        
+        #playOverlay.hidden #passwordForm {
+            opacity: 0;
+        }
+
+        #cubeStage {
+            /* width: 400px; */
+            /* filter: brightness(0.5); */
+
+        }
+        #passwordForm {
+            /* background: rgb(0, 0, 0); */
+            padding: 30px;
+            /* backdrop-filter: blur(5px); */
+            text-align: center;
+            /* border: 4px ridge gray; */
+            z-index: 10;
+            position: relative;
+            transition: opacity 0.5s ease;
+        }
+
+        #passwordForm.animate {
+            animation: blink .5s forwards;
+            animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes blink {
+            0% {transform: scaleY(1) scaleX(1);}
+            30% {transform: scaleY(0.01) scaleX(1); filter: blur(10px) brightness(10.5);}
+            100% {transform: scaleY(0) scaleX(0);
+            filter: blur(10px) brightness(10.5);}
+        }
+
+        #enterButton {
+            border-radius: 0;
+            /* color: #fff; */
+            /* padding: 10px 20px; */
+            /* font-family: 'ag5', monospace; */
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #enterButton:hover {
+            /* background: rgba(255,255,255,0.3); */
+        }
+        #passwordMessage {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        #playOverlay p {
+            font-family: 'cute';
+            font-size: 18px;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* Add particles for playful effect during transition */
+        .audio-particle {
+            display: none;
+        }
+
+        /* Remove the ripple animation */
+        @keyframes ripple {
+            0% { transform: scale(1); filter: none; }
+            100% { transform: scale(1); filter: none; }
+        }
+
+        .canvas-ripple {
+            animation: none;
+        }
+
+        #playOverlay.hidden #passwordForm {
+            opacity: 0;
+        }
+
+        .old-hr {
+            width: 100%;
+            height: 1px;
+            background: rgb(0, 0, 0);
+            border-top: 1px solid rgb(55, 55, 55);
+            margin: 10px 0;
+        }
+
+        .event-time {
+            font-size: 18px;
+            margin: 0;
+            text-align: center;
+            /* color: rgb(255, 178, 178); */
+            /* font-family: 'ag5', monospace; */
+            /* animation: concert 1.5s infinite alternate ease-in-out; */
+        }
+
+        @keyframes concert {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Mascot styles */
+        #mascot {
+            position: fixed;
+            top: 20px;
+            right: -300px; /* Start off-screen */
+            width: 150px;
+            height: auto;
+            z-index: 1002;
+            transition: right 1s linear;
+            pointer-events: none;
+        }
+
+        #mascot.show {
+            right: 20px; /* Slide to final position */
+        }
+
+        #chatBubble {
+            position: fixed;
+            top: 40px;
+            right: 180px; /* Final position */
+            background: #c0c0c0;
+            color: black;
+            padding: 8px;
+            border: 2px inset #c0c0c0;
+            font-family: 'MS Sans Serif', sans-serif;
+            font-size: 11px;
+            width: 280px;
+            z-index: 1003;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.3);
+            transition: opacity 0.3s ease-out 1s, transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1s;
+        }
+
+        #chatBubble.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #chatBubble .chat-header {
+            background: linear-gradient(to bottom, #0080ff, #0060c0);
+            color: white;
+            padding: 2px 6px;
+            margin: -8px -8px 4px -8px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        #chatBubble .chat-content {
+            background: white;
+            border: 1px inset #c0c0c0;
+            padding: 4px;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        #chatBubble .username {
+            color: #0000ff;
+            font-weight: bold;
+        }
+
+        /* Auto-hide animation */
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        #mascot.hide, #chatBubble.hide {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div id="playOverlay">
+        <div id="overlayLeft"></div>
+        <div id="overlayRight"></div>
+        <div id="passwordForm">
+            <!-- <img width="120" style="margin-top: -10px;" id="cubeStage" width="" src="./cubestage3.png" alt="Cube Stage"> -->
+            
+            <!-- Old-school text marquee effect -->
+            <!-- <marquee behavior="alternate" scrollamount="3">
+                <font color="#ffff00">★</font> Live <font color="#ffff00">★</font>
+            </marquee> -->
+            
+            <h1 style="margin-top: 0;">The Tandy Cube</h1>
+            
+            <div class="event-status">
+                <!-- <div class="status-badge">
+                    <span class="live-indicator"><span class="live-dot no-animation"></span> STREAMING NOW</span>
+                </div> -->
+                <div class="event-time">            <img width="20" style="margin-top: -10px;" id="cubeStage" width="" src="https://webring.pcotandy.org/Assets/TandyLogo.png" alt="Cube Stage">
+                    Concert in progress             <img width="20" style="margin-top: -10px;" id="cubeStage" width="" src="https://webring.pcotandy.org/Assets/TandyLogo.png" alt="Cube Stage">
+                </div>
+            </div>
+            
+            <div class="old-hr"></div>
+            
+            <div class="event-artist">Kat Mazur</div>
+            <div class="event-title">Dancing to: <i>Cut on a Can</i></div>
+            
+<br>
+            
+            <button id="enterButton">Enter</button>
+ 
+            
+            <div id="passwordMessage"></div>
+        </div>
+    </div>
+    <canvas id="glCanvas"></canvas>
+    <div id="streamInfo">
+        <div class="live-indicator">
+            <div class="live-dot"></div>
+            <span>LIVE</span>
+        </div>
+        <div class="stream-time">00:00:00</div>
+        <div id="date"></div>
+        <div class="now-playing marquee">Cut on a Can dance – Kat Mazur</div>
+        <div id="cameraMode" style="font-size: 12px; opacity: 0.7;">📱 Mobile Camera</div>
+    </div>
+    
+    <!-- Mascot and chat bubble -->
+    <img id="mascot" src="./blueby6.png" alt="Mascot">
+    <div id="chatBubble">
+        <div class="chat-header">Instant Message - Blueby</div>
+        <div class="chat-content">
+            <span class="username">Blueby:</span> Welcome to the Tandy Cube!<br>
+            Use <strong>WASD</strong> to move around<br>
+            <strong>Space/Shift</strong> for up/down<br>
+            Press <strong>C</strong> to cycle camera modes<br>
+            Press <strong>L</strong> for look-at stage mode<br>
+            Press <strong>F</strong> for smooth film mode (recording)<br>
+            <strong>🎮 Gamepad:</strong> Left stick moves, triggers up/down, Y toggles film mode
+        </div>
+    </div>
+    
+    <img id="displacementMap" src="./displace.png" 
+         style="display: none;" crossorigin="anonymous">
+         <video id="videoTexture" style="display: none;" loop playsinline muted autoplay webkit-playsinline>
+            <source src="./Untitled.mp4" type="video/mp4">
+         </video>
+    <script id="vertexShader" type="x-shader/x-vertex">
+        precision mediump float;
+        attribute vec4 aVertexPosition;
+        varying vec2 vTextureCoord;
+        
+        void main() {
+            vTextureCoord = (aVertexPosition.xy + 1.0) / 2.0;
+            gl_Position = aVertexPosition;
+        }
+    </script>
+    <script id="fragmentShader" type="x-shader/x-fragment">
+        precision highp float;
+        
+        uniform vec2 iResolution;
+        uniform float iTime;
+        uniform vec2 iMouse;
+        uniform sampler2D iChannel0;
+        uniform sampler2D iChannel1;
+        uniform vec3 uOrbPositions[6];  // Reduced from 10 to match MAX_ORBS
+        uniform vec3 uOrbColors[6];     // Color for each orb
+        uniform int uOrbCount;           // Current number of active orbs
+        uniform sampler2D uTextTexture;  // Single text texture (we'll use texture atlas later)
+        uniform vec3 uTextPositions[6]; // Positions for text billboards
+        uniform int uTextCount;          // Number of active text billboards
+        uniform vec3 uCameraPos;         // Camera position
+        uniform vec2 uCameraRot;         // Camera rotation (pitch, yaw)
+        uniform bool uUsePolarCamera;    // Whether to use polar camera mode
+        uniform vec2 uPolarRotation;     // Polar camera rotation (pitch, yaw)
+        varying vec2 vTextureCoord;
+
+        #define EPSILON .0001
+        #define MAX_VIEW_STEPS 500
+        #define MAX_SHADOW_STEPS 32
+        #define OCCLUSION_SAMPLES 4.0
+        #define OCCLUSION_FACTOR .5
+        #define MAX_DEPTH 50.0
+        #define BUMP_FACTOR .03
+        #define TEX_SCALE_FACTOR .4
+        #define ORB_RADIUS 0.2
+        #define TEXT_BILLBOARD_SIZE vec2(0.3, 0.1) // Width and height of text billboards
+
+        #define BOX_POS vec3(0.0, 0.0, 0.0)
+        #define BOX_DIM vec3(1.0, 1.0, 1.0)
+        #define LIGHT_COLOR vec4(1.0)
+        #define PEN_FACTOR 50.0
+        #define MAT_COLOR vec4(1.0)
+        #define MAT_GLOSS 1.0
+        #define PLANE_SIZE vec2(.5 * (16./9.), .5)
+        #define PLANE_CENTER vec3(0.0, 1.12, 0.0)
+
+        // Chroma key function - returns true if color should be keyed out (transparent)
+        bool isChromaKey(vec3 color, vec3 keyColor, float threshold) {
+            float distance = length(color - keyColor);
+            return distance < threshold;
+        }
+
+        // Chroma key with black as the key color
+        bool isBlackChromaKey(vec3 color) {
+            float threshold = 0.5; // Adjust this value to control sensitivity
+            return isChromaKey(color, vec3(0.0, 0.0, 0.0), threshold);
+        }
+
+
+        struct Light {
+            vec3 position;
+            vec4 color;
+            float brightness;
+            float penumbraFactor;
+        };
+
+        struct Material {
+            vec4 color;
+            float gloss;
+        };
+
+        float distSphere(vec3 p, vec3 center, float radius) {
+            return length(p - center) - radius;
+        }
+
+        vec4 tex3D(in vec3 p, in vec3 n, sampler2D tex) {
+            vec4 x = texture2D(tex, p.yz);
+            vec4 y = texture2D(tex, p.xz);
+            vec4 z = texture2D(tex, p.xy);
+            return x * abs(n.x) + y * abs(n.y) + z * abs(n.z);
+        }
+
+        float sdBoxFrame( vec3 p, vec3 b, float e )
+{
+       p = abs(p  )-b;
+  vec3 q = abs(p+e)-e;
+  return min(min(
+      length(max(vec3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
+      length(max(vec3(q.x,p.y,q.z),0.0))+min(max(q.x,max(p.y,q.z)),0.0)),
+      length(max(vec3(q.x,q.y,p.z),0.0))+min(max(q.x,max(q.y,p.z)),0.0));
+}
+
+float distVideoPlane(vec3 p) {
+    // Plane facing camera, centered at (0, 0, 0), size 2x2 in X and Y, lying at Z = 0.5
+    // Adjust position/size as needed
+    vec3 center = PLANE_CENTER;
+    vec2 planeSize = PLANE_SIZE; // half extents
+    vec3 local = p - center;
+
+    // Only render front-facing side (optional)
+    if (abs(local.x) > planeSize.x || abs(local.y) > planeSize.y) return 100.0;
+
+    return abs(local.z); // distance to z-plane
+}
+
+        float distTextBillboard(vec3 p, vec3 center, vec3 cameraPos) {
+            // Early distance check - if we're far from the billboard center, skip expensive calculations
+            float roughDist = length(p - center);
+            if (roughDist > 0.5) return roughDist; // Return actual distance, no offset
+            
+            // Calculate billboard orientation (always face camera)
+            vec3 toCam = normalize(cameraPos - center);
+            vec3 up = vec3(0.0, 1.0, 0.0);
+            vec3 right = normalize(cross(up, toCam));
+            up = cross(toCam, right);
+            
+            // Transform point to billboard local space
+            vec3 local = p - center;
+            vec2 localPos = vec2(dot(local, right), dot(local, up));
+            
+            // Check if within billboard bounds
+            if (abs(localPos.x) > TEXT_BILLBOARD_SIZE.x || abs(localPos.y) > TEXT_BILLBOARD_SIZE.y) {
+                return length(local); // Return actual distance, no offset
+            }
+            
+            // Calculate UV and sample texture to check if there's text here
+            vec2 uv = (localPos / TEXT_BILLBOARD_SIZE) * 0.5 + 0.5;
+            uv.y = 1.0 - uv.y;
+            
+            vec4 textColor = texture2D(uTextTexture, uv);
+            
+            // Only register as a surface if there's text (using chroma key instead of alpha)
+            if (isBlackChromaKey(textColor.rgb)) {
+                return 100.0; // Return large distance to prevent sphere rendering
+            }
+            
+            // Distance to billboard plane
+            return abs(dot(local, toCam));
+        }
+
+        float distBox(vec3 samplePos, vec3 boxPos, vec3 boxDim) {    
+            vec3 normal = normalize(samplePos - boxPos);
+            float bump = 0.0;
+            
+            if(length(samplePos-boxPos) < length(boxDim)) {
+                vec4 tex = tex3D(samplePos * TEX_SCALE_FACTOR, normal, iChannel0);
+                bump = tex.x * BUMP_FACTOR;  // Using .x instead of .r
+            }
+            
+            vec3 d = abs(samplePos-boxPos) - boxDim;
+            return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0)) + bump;
+        }
+        float sdBox(vec3 samplePos, vec3 boxPos, vec3 boxDim) {    
+            vec3 normal = normalize(samplePos - boxPos);
+            float bump = 0.0;
+            
+            
+            vec3 d = abs(samplePos-boxPos) - boxDim;
+            return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+        }
+        
+
+        float sdPlane( vec3 p, vec3 n, float h )
+{
+  // n must be normalized
+  return dot(p,n) + h;
+}
+
+float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
+    float d = min(distBox(samplePos, BOX_POS, BOX_DIM), 
+    distBox(samplePos, vec3(0.0, -5.0, 0.0), vec3(4.0, 4.0, 4.0)));
+
+    // Optimized orb checking with early exit
+    float minOrbDist = 1000.0;
+    for (int i = 0; i < 6; i++) {
+        if (i >= uOrbCount) break;
+        float orbDist = distSphere(samplePos, uOrbPositions[i], ORB_RADIUS);
+        minOrbDist = min(minOrbDist, orbDist);
+        // Early exit if we're very close to an orb
+        if (orbDist < 0.01) break;
+    }
+    d = min(d, minOrbDist);
+
+    // Only check text billboards if we're close to orbs
+    if (minOrbDist < 1.0) {
+        for (int i = 0; i < 6; i++) {
+            if (i >= uTextCount) break;
+            d = min(d, distTextBillboard(samplePos, uTextPositions[i], cameraPos));
+        }
+    }
+
+    // Add video plane
+    if (!skipVideoPlane) {
+        float dVideo = distVideoPlane(samplePos);
+        d = min(d, dVideo);
+    }
+
+    return d;
+}
+
+        void camFreefly(out vec3 pos, out vec3 dir, in vec3 cameraPos, in vec2 rotation, in vec2 fragCoord) {
+            pos = cameraPos;
+            
+            // Calculate screen coordinates
+            vec2 uv = (fragCoord.xy - iResolution.xy * 0.5) / iResolution.y;
+            
+            // Create view ray in camera space (looking down -Z)
+            vec3 rayDir = normalize(vec3(uv.x, uv.y, -1.0));
+            
+            // Build rotation matrix from yaw and pitch
+            float yaw = rotation.y;
+            float pitch = rotation.x;
+            
+            // Rotation matrix for yaw (Y axis)
+            mat3 yawMatrix = mat3(
+                cos(yaw), 0.0, sin(yaw),
+                0.0, 1.0, 0.0,
+                -sin(yaw), 0.0, cos(yaw)
+            );
+            
+            // Rotation matrix for pitch (X axis)
+            mat3 pitchMatrix = mat3(
+                1.0, 0.0, 0.0,
+                0.0, cos(pitch), -sin(pitch),
+                0.0, sin(pitch), cos(pitch)
+            );
+            
+            // Apply rotations: first pitch, then yaw
+            dir = yawMatrix * pitchMatrix * rayDir;
+        }
+
+        void camPolar(out vec3 pos, out vec3 dir, in vec3 origin, in vec2 rotation, in float dist, in float zoom, in vec2 fragCoord) {
+            vec2 c = cos(rotation);
+            vec4 s;
+            s.xy = sin(rotation);
+            s.zw = -s.xy;
+            
+            dir.xy = fragCoord.xy - iResolution.xy*.5;
+            dir.z = iResolution.y*zoom;
+            dir = normalize(dir);
+            
+            dir.yz = dir.yz*c.x + dir.zy*s.zx;
+            dir.xz = dir.xz*c.y + dir.zx*s.yw;
+            
+            pos = origin - dist*vec3(c.x*s.y,s.z,c.x*c.y);
+        }
+
+        void marchThroughField(inout vec3 pos, vec3 dir, vec3 eye, bool skipVideoPlane) {
+            float dist;
+            for(int i = 0; i < MAX_VIEW_STEPS; i++) {
+                dist = getDist(pos, skipVideoPlane, eye);
+                if(dist < EPSILON || length(pos-eye) > MAX_DEPTH-EPSILON)            
+                    return;
+                pos += dir * dist;
+            }
+        }
+
+        vec3 getNormal(vec3 pos) {
+            float d = getDist(pos, false, vec3(0.0));
+            return normalize(vec3(
+                getDist(pos+vec3(EPSILON,0,0), false, vec3(0.0))-d,
+                getDist(pos+vec3(0,EPSILON,0), false, vec3(0.0))-d,
+                getDist(pos+vec3(0,0,EPSILON), false, vec3(0.0))-d
+            ));
+        }
+
+        float calcOcclusion(vec3 pos, vec3 surfaceNormal) {
+            float result = 0.0;
+            vec3 normalPos = vec3(pos);
+            for(float i = 0.0; i < OCCLUSION_SAMPLES; i+=1.0) {
+                normalPos += surfaceNormal * (1.0/OCCLUSION_SAMPLES);
+                result += (1.0/exp2(i)) * (i/OCCLUSION_SAMPLES)-getDist(normalPos, false, vec3(0.0));
+            }
+            return 1.0-(OCCLUSION_FACTOR*result);
+        }
+
+        float calcShadow(vec3 origin, vec3 lightDir, Light light) {
+            float dist;
+            float result = 1.0;
+            float lightDist = length(light.position - origin);
+            
+            vec3 pos = origin + lightDir * (EPSILON * 15.0 + BUMP_FACTOR);
+        
+            for (int i = 0; i < MAX_SHADOW_STEPS; i++) {
+                // Check regular geometry (excluding video plane and text billboards)
+                dist = getDist(pos, true, vec3(0.0));
+                
+                // Manually check only non-text geometry for shadows
+                float d = min(distBox(pos, BOX_POS, BOX_DIM), 
+                distBox(pos, vec3(0.0, -5.0, 0.0), vec3(4.0, 4.0, 4.0)));
+                
+                // Optimized orb checking for shadows with early exit
+                for (int j = 0; j < 6; j++) {
+                    if (j >= uOrbCount) break;
+                    float orbDist = distSphere(pos, uOrbPositions[j], ORB_RADIUS);
+                    d = min(d, orbDist);
+                    // Early exit if we hit an orb
+                    if (orbDist < EPSILON) {
+                        return 0.0;
+                    }
+                }
+                
+                dist = d;
+        
+                // Check video plane (simplified)
+                vec3 center = PLANE_CENTER;
+                vec2 planeSize = PLANE_SIZE;
+                vec3 local = pos - center;
+        
+                // Ray-plane intersection (plane at Z = center.z)
+                if (abs(lightDir.z) > 0.0001) {  // avoid division by 0
+                    float tPlane = (center.z - origin.z) / lightDir.z;
+                
+                    if (tPlane > 0.0 && tPlane < lightDist) {
+                        vec3 hitPos = origin + tPlane * lightDir;
+                        vec3 local = hitPos - center;
+                
+                        if (abs(local.x) <= planeSize.x && abs(local.y) <= planeSize.y) {
+                            vec2 uv = local.xy / planeSize + 0.5;
+                            uv.y = 1.0 - uv.y;
+                            vec4 tex = texture2D(iChannel1, uv);
+                
+                            if (!isBlackChromaKey(tex.rgb)) {
+                                return 0.0; // opaque part of the video plane blocks light
+                            }
+                        }
+                    }
+                }
+        
+                if (dist < EPSILON) {
+                    return 0.0; // Hit solid geometry
+                }
+        
+                if (length(pos - origin) > lightDist || length(pos - origin) > MAX_DEPTH) {
+                    return result;
+                }
+        
+                pos += lightDir * dist;
+        
+                if (length(pos - origin) < lightDist) {
+                    result = min(result, light.penumbraFactor * dist / length(pos - origin));
+                }
+            }
+            return result;
+        }
+        
+
+        vec4 calcLighting(vec3 samplePos, vec3 eye, Light light, Material material) {
+            float lightDist = length(light.position-samplePos);
+            vec3 lightDir = normalize(light.position-samplePos);
+            vec3 eyeDir = normalize(samplePos-eye);
+            vec3 surfaceNormal = getNormal(samplePos);
+            vec3 reflection = normalize(reflect(eyeDir, surfaceNormal));
+            
+            float specular = pow(max(0.0, dot(lightDir, reflection)), 72.0);
+            float diffuse = max(0.0, dot(lightDir, surfaceNormal));
+            float ambient = .05;
+            
+            float attenuation = min(1.0, 1.0/(lightDist/light.brightness));
+            float shadow = calcShadow(samplePos, lightDir, light);
+            float occlusion = calcOcclusion(samplePos, surfaceNormal);
+            
+            // Check if we're on an orb surface
+            vec4 finalColor = material.color;
+            for(int i = 0; i < 6; i++) {
+                if(i >= uOrbCount) break;
+                if(length(samplePos - uOrbPositions[i]) < ORB_RADIUS + EPSILON) {
+                    finalColor = vec4(uOrbColors[i], 1.0);
+                    break;
+                }
+            }
+            
+            return light.color * finalColor * clamp(((specular+diffuse)*shadow*attenuation)+(ambient*occlusion), 0.0, 1.0);
+        }
+
+        vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
+            if (length(pos - eye) > MAX_DEPTH - EPSILON) return vec4(0.0);
+
+            // Check if this point is on a text billboard
+            for (int i = 0; i < 6; i++) {
+                if (i >= uTextCount) break;
+                
+                vec3 center = uTextPositions[i];
+                vec3 toCam = normalize(eye - center);
+                vec3 up = vec3(0.0, 1.0, 0.0);
+                vec3 right = normalize(cross(up, toCam));
+                up = cross(toCam, right);
+                
+                vec3 local = pos - center;
+                vec2 localPos = vec2(dot(local, right), dot(local, up));
+                
+                if (abs(localPos.x) <= TEXT_BILLBOARD_SIZE.x && 
+                    abs(localPos.y) <= TEXT_BILLBOARD_SIZE.y &&
+                    abs(dot(local, toCam)) < EPSILON) {
+                    
+                    // Calculate UV coordinates for the text texture
+                    vec2 uv = (localPos / TEXT_BILLBOARD_SIZE) * 0.5 + 0.5;
+                    uv.y = 1.0 - uv.y; // Flip Y coordinate
+                    
+                    // Sample the text texture
+                    vec4 textColor = texture2D(uTextTexture, uv);
+                    
+                    // Only render the text, no background (using chroma key instead of alpha)
+                    if (!isBlackChromaKey(textColor.rgb)) {
+                        return textColor;
+                    }
+                }
+            }
+
+            // Determine if this point is on the video plane
+            vec3 center = PLANE_CENTER;
+            vec2 planeSize = PLANE_SIZE;
+            vec3 local = pos - center;
+        
+            if (abs(local.z) < EPSILON &&
+            abs(local.x) <= planeSize.x &&
+            abs(local.y) <= planeSize.y) {
+        
+                vec2 uv = local.xy / planeSize + 0.5;
+                uv.y = 1.0 - uv.y;
+        
+                vec4 tex = texture2D(iChannel1, uv);
+                
+                // Check if this pixel should be keyed out (transparent)
+                if (isBlackChromaKey(tex.rgb)) {
+                    // Pixel is transparent, raymarch through to background
+                    vec3 deepPos = pos;
+                    marchThroughField(deepPos, dir, eye, true);
+                    
+                    // Only render background if something was hit
+                    if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
+                        return calcLighting(deepPos, eye, light, material);
+                    }
+                    
+                    // If nothing hit behind, return black/transparent
+                    return vec4(0.0, 0.0, 0.0, 0.0);
+                }
+                
+                // Calculate lighting for both front and back of the video plane
+                float lightDist = length(light.position - pos);
+                vec3 lightDir = normalize(light.position - pos);
+                vec3 eyeDir = normalize(pos - eye);
+                
+                // Calculate lighting for front face
+                vec3 frontNormal = vec3(0.0, 0.0, 1.0);
+                vec3 frontReflection = normalize(reflect(eyeDir, frontNormal));
+                float frontSpecular = pow(max(0.0, dot(lightDir, frontReflection)), 72.0);
+                float frontDiffuse = max(0.0, dot(lightDir, frontNormal));
+                
+                // Calculate lighting for back face
+                vec3 backNormal = vec3(0.0, 0.0, -1.0);
+                vec3 backReflection = normalize(reflect(eyeDir, backNormal));
+                float backSpecular = pow(max(0.0, dot(lightDir, backReflection)), 72.0);
+                float backDiffuse = max(0.0, dot(lightDir, backNormal));
+                
+                // Use the stronger of front or back lighting
+                float specular = max(frontSpecular, backSpecular);
+                float diffuse = max(frontDiffuse, backDiffuse);
+                float ambient = 0.3; // Increased from 0.05 to maintain higher minimum brightness
+                
+                float attenuation = min(1.0, 1.0/(lightDist/light.brightness));
+                float shadow = calcShadow(pos, lightDir, light);
+                float occlusion = calcOcclusion(pos, frontNormal); // Using front normal for occlusion
+                
+                // Apply lighting to the video texture with higher minimum brightness
+                vec4 litColor = light.color * tex * clamp(((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion), 0.4, 1.0);
+                
+                return litColor;
+            }
+        
+            return calcLighting(pos, eye, light, material);
+        }
+
+        void main() {
+            vec2 fragCoord = gl_FragCoord.xy;
+            vec3 pos, dir, eye;
+            
+            if (uUsePolarCamera) {
+                camPolar(pos, dir, vec3(0.0), uPolarRotation, 5.0, 1.0, fragCoord);
+            } else {
+                camFreefly(pos, dir, uCameraPos, uCameraRot, fragCoord);
+            }
+            eye = vec3(pos);
+            
+            Light light = Light(
+                vec3(3.0*sin(iTime+1.3), 3.5, 3.0*cos(iTime+1.3)),
+                LIGHT_COLOR,
+                3.0,
+                PEN_FACTOR
+            );
+            Material mat = Material(MAT_COLOR, MAT_GLOSS);
+            
+            marchThroughField(pos, dir, eye, false);
+            
+            gl_FragColor = shade(pos, dir, eye, light, mat);
+        }
+    </script>
+    <script>
+        let gl;
+        let program;
+        let mouseX = 0;
+        let startTime;
+        let videoTexture;
+        let streamStartTime;
+        let videoStarted = false;
+        let audioFadeInterval;
+        let audioContext;
+
+        // Camera controls
+        let cameraPos = [0.0, 1.1177, 0.858585]; // Use first keyframe position as starting position
+        let cameraRot = [0.0, 0.0]; // Will be calculated from first keyframe target
+        let keys = {};
+        let mouseLocked = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        const MOVE_SPEED = 0.05;
+        const MOUSE_SENSITIVITY = 0.002;
+
+        // Mobile/touch support
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Camera mode system: 0 = polar, 1 = free-fly, 2 = look-at
+        let cameraMode = isMobile ? 0 : 1; // Start with polar on mobile, free-fly on desktop
+        const CAMERA_MODES = ['polar', 'free-fly', 'look-at'];
+        const STAGE_TARGET = [0.0, 1.12, 0.0]; // Stage position (PLANE_CENTER)
+
+        // Film mode for smooth camera movement (for recording)
+        let filmMode = false;
+        let cameraVelocity = { x: 0, y: 0, z: 0 };
+        const FILM_ACCELERATION = 0.015; // Increased from 0.003 for faster response
+        const FILM_DECELERATION = 0.75; // Changed from 0.85 for smoother deceleration
+        const FILM_MAX_SPEED = 0.05;
+
+        // Intro camera sequence
+        let introActive = false;
+        let introStartTime = 0;
+        let introDuration = 10000; // 10 seconds total intro
+        let savedCameraPos = [0.0, 0.0, 0.0];
+        let savedCameraRot = [0.0, 0.0];
+        let savedCameraMode = 1;
+        let introHasRun = false; // Flag to prevent intro from running multiple times
+
+        // intro camera sequence
+        // intro camera sequence
+        // intro camera sequence
+        // intro camera sequence
+        // intro camera sequence
+        const introKeyframes = [
+            { time: 0, pos: [0.0, 1.1177, 0.858585], target: [0.0, 1.12, 0.0] },
+            { time: 5, pos: [
+  25.682387074225637,
+  11.432907063439641,
+  0.31418526387081597
+] }, 
+            { time: 7.5, pos: [
+  0.20940000578790552,
+  1.5115137805417105,
+  -3.0745885709316747
+], target: [0.0, 1.12, 0.0] },
+            // { time: 10, pos: [0.03506399145371511, 1.9420566568593576, -3.7719858626962317], target: [0.0, 1.12, 0.0] }
+
+
+        ];
+
+        let usePolarCamera = (cameraMode === 0); // Use polar camera on mobile, free-fly on desktop
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let polarRotation = 2.9824999999999946; // For polar camera mode
+        let polarPitch = 0.514; // For polar camera mode
+
+        [
+  
+]
+        function startIntroSequence() {
+            // Check if intro has already run
+            if (introHasRun) {
+                console.log('Intro sequence already completed, skipping...');
+                return;
+            }
+            
+            console.log('Starting intro camera sequence...');
+            
+            // Mark intro as having run
+            introHasRun = true;
+            
+            // Save current camera state
+            savedCameraPos = [...cameraPos];
+            savedCameraRot = [...cameraRot];
+            savedCameraMode = cameraMode;
+            
+            // Set intro state
+            introActive = true;
+            introStartTime = Date.now();
+            
+            // Set initial position from first keyframe
+            const firstKeyframe = introKeyframes[0];
+            cameraPos = [...firstKeyframe.pos];
+            if (firstKeyframe.target) {
+                calculateLookAtRotationToTarget(firstKeyframe.target);
+            }
+            
+            console.log('Intro sequence started, duration:', introDuration / 1000, 'seconds');
+        }
+
+        function updateIntroCamera() {
+            if (!introActive) return;
+            
+            const elapsed = Date.now() - introStartTime;
+            const progress = elapsed / introDuration;
+            
+            // Check if intro is complete
+            if (progress >= 1.0) {
+                endIntroSequence();
+                return;
+            }
+            
+            // Find current keyframe segment
+            const currentTime = elapsed / 1000; // Convert to seconds
+            let currentKeyframe = null;
+            let nextKeyframe = null;
+            
+            for (let i = 0; i < introKeyframes.length - 1; i++) {
+                if (currentTime >= introKeyframes[i].time && currentTime < introKeyframes[i + 1].time) {
+                    currentKeyframe = introKeyframes[i];
+                    nextKeyframe = introKeyframes[i + 1];
+                    break;
+                }
+            }
+            
+            // If we're past the last keyframe, use the last one
+            if (!currentKeyframe) {
+                currentKeyframe = introKeyframes[introKeyframes.length - 1];
+                cameraPos = [...currentKeyframe.pos];
+                if (currentKeyframe.target) {
+                    calculateLookAtRotationToTarget(currentKeyframe.target);
+                }
+                return;
+            }
+            
+            // Interpolate between keyframes
+            if (nextKeyframe) {
+                const segmentProgress = (currentTime - currentKeyframe.time) / (nextKeyframe.time - currentKeyframe.time);
+                const easedProgress = easeInOutCubic(segmentProgress);
+                
+                // Interpolate position
+                cameraPos[0] = lerp(currentKeyframe.pos[0], nextKeyframe.pos[0], easedProgress);
+                cameraPos[1] = lerp(currentKeyframe.pos[1], nextKeyframe.pos[1], easedProgress);
+                cameraPos[2] = lerp(currentKeyframe.pos[2], nextKeyframe.pos[2], easedProgress);
+                
+                // Handle target (look-at)
+                const useTarget = nextKeyframe.target || currentKeyframe.target;
+                if (useTarget) {
+                    calculateLookAtRotationToTarget(useTarget);
+                }
+            }
+        }
+
+        function endIntroSequence() {
+            console.log('Intro sequence complete, returning to normal camera control');
+            introActive = false;
+            
+            // Restore camera mode (but keep final position)
+            cameraMode = savedCameraMode;
+            usePolarCamera = (cameraMode === 0);
+            updateCameraModeIndicator();
+            
+            // Now show Blueby after intro is complete
+            showBlueby();
+        }
+
+        function showBlueby() {
+            const mascot = document.getElementById('mascot');
+            const chatBubble = document.getElementById('chatBubble');
+            
+            // Show mascot and chat bubble
+            mascot.classList.add('show');
+            chatBubble.classList.add('show');
+            
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                mascot.classList.add('hide');
+                chatBubble.classList.add('hide');
+                
+                // Remove elements after fade out animation
+                setTimeout(() => {
+                    mascot.style.display = 'none';
+                    chatBubble.style.display = 'none';
+                }, 500);
+            }, 8000);
+        }
+
+        function calculateLookAtRotationToTarget(target) {
+            // Calculate vector from camera to target
+            const dx = target[0] - cameraPos[0];
+            const dy = target[1] - cameraPos[1];
+            const dz = target[2] - cameraPos[2];
+            
+            // Calculate yaw (horizontal rotation)
+            const yaw = Math.atan2(dx, -dz);
+            
+            // Calculate pitch (vertical rotation)
+            const horizontalDistance = Math.sqrt(dx * dx + dz * dz);
+            const pitch = Math.atan2(-dy, horizontalDistance);
+            
+            // Update camera rotation
+            cameraRot[0] = pitch;
+            cameraRot[1] = yaw;
+        }
+
+        // Utility functions for smooth interpolation
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function updateCameraModeIndicator() {
+            const indicator = document.getElementById('camera-mode-indicator');
+            if (!indicator) return;
+            
+            let modeText;
+            
+            // Check if mobile
+            if (isMobile) {
+                modeText = '📱 Mobile Camera';
+            } else {
+                // Desktop camera modes
+                switch (cameraMode) {
+                    case 0:
+                        modeText = '🌍 Polar Mode';
+                        break;
+                    case 1:
+                        modeText = '🚁 Free-fly Mode';
+                        break;
+                    case 2:
+                        modeText = '👁️ Look-at Mode';
+                        break;
+                    default:
+                        modeText = '🚁 Free-fly Mode';
+                }
+            }
+            
+            // Add film mode indicator if active
+            if (filmMode) {
+                modeText += ' 🎬 FILM MODE';
+            }
+            
+            // Add gamepad status if connected
+            if (gamepadConnected) {
+                modeText += ' 🎮 GAMEPAD';
+            }
+            
+            indicator.textContent = modeText;
+        }
+
+        // Orb management
+        const MAX_ORBS = 6; // Reduced from 10
+        const ORB_LIFETIME = 30000; // 30 seconds lifetime for each orb (increased from 10s)
+        const SPAWN_INTERVAL = 4000; // 4 seconds between spawns (increased from 3s)
+        let orbs = [];
+
+        const RANDOM_NAMES = [
+            "umru", "ryjelsum", "qui.et", "lost_in_the_loop", "npnc", "theresa_sweetheart", 
+            "edude92", "tristan", "Crenchwater", "erowidfan", "ButitsAlex"
+        ];
+
+        let usedNames = new Set(); // Track used names to ensure uniqueness
+
+        function getRandomName() {
+            // Get available names (not currently used)
+            const availableNames = RANDOM_NAMES.filter(name => !usedNames.has(name));
+            
+            // If all names are used, clear the used names set and start over
+            if (availableNames.length === 0) {
+                usedNames.clear();
+                return RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+            }
+            
+            // Return a random available name
+            const selectedName = availableNames[Math.floor(Math.random() * availableNames.length)];
+            usedNames.add(selectedName);
+            return selectedName;
+        }
+
+        class Orb {
+            constructor(name) {
+                this.name = name;
+                this.position = this.getValidPosition();
+                this.color = [
+                    Math.random() * 0.5 + 0.5, // Brighter colors (0.5 - 1.0)
+                    Math.random() * 0.5 + 0.5,
+                    Math.random() * 0.5 + 0.5
+                ];
+                this.createdAt = Date.now();
+                this.textTexture = this.createTextTexture();
+                this.textPosition = [
+                    this.position[0],
+                    this.position[1] + 0.3, // Reverted back to original position
+                    this.position[2]
+                ];
+                
+                // Movement properties
+                this.velocity = [0, 0, 0];
+                this.targetPosition = [...this.position];
+                this.moveSpeed = 0.01 + Math.random() * 0.02; // Random speed between 0.01-0.03
+                this.lastMoveTime = Date.now();
+                this.moveInterval = 2000 + Math.random() * 4000; // Move every 2-6 seconds
+                this.movementPattern = Math.floor(Math.random() * 3); // 0: wandering, 1: orbiting, 2: exploring
+                this.orbitCenter = [...this.position];
+                this.orbitAngle = Math.random() * Math.PI * 2;
+                this.orbitRadius = 0.5 + Math.random() * 1.0;
+            }
+
+            getValidPosition() {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 2 + Math.random() * 1.5; // 2-3.5 units from center (increased range)
+                const height = Math.random() * 2.0 - 1.0; // -1.0 to 1.0 vertical range (increased)
+                
+                return [
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                ];
+            }
+
+            updateMovement() {
+                const now = Date.now();
+                
+                // Check if it's time to choose a new target
+                if (now - this.lastMoveTime > this.moveInterval) {
+                    this.chooseNewTarget();
+                    this.lastMoveTime = now;
+                    this.moveInterval = 2000 + Math.random() * 4000; // New random interval
+                }
+                
+                // Update position based on movement pattern
+                switch (this.movementPattern) {
+                    case 0: // Wandering - move toward target position
+                        this.wanderMovement();
+                        break;
+                    case 1: // Orbiting - circular movement around a center point
+                        this.orbitMovement();
+                        break;
+                    case 2: // Exploring - more erratic movement
+                        this.exploreMovement();
+                        break;
+                }
+                
+                // Update text position to follow orb
+                this.textPosition[0] = this.position[0];
+                this.textPosition[1] = this.position[1] + 0.3;
+                this.textPosition[2] = this.position[2];
+            }
+
+            chooseNewTarget() {
+                switch (this.movementPattern) {
+                    case 0: // Wandering
+                        this.targetPosition = this.getValidPosition();
+                        break;
+                    case 1: // Orbiting
+                        this.orbitCenter = this.getValidPosition();
+                        this.orbitRadius = 0.5 + Math.random() * 1.0;
+                        break;
+                    case 2: // Exploring
+                        // Choose a target within a smaller radius for more local exploration
+                        const angle = Math.random() * Math.PI * 2;
+                        const distance = 0.5 + Math.random() * 1.5;
+                        this.targetPosition = [
+                            this.position[0] + Math.cos(angle) * distance,
+                            this.position[1] + (Math.random() - 0.5) * 0.8,
+                            this.position[2] + Math.sin(angle) * distance
+                        ];
+                        break;
+                }
+            }
+            
+            wanderMovement() {
+                // Move toward target position
+                const dx = this.targetPosition[0] - this.position[0];
+                const dy = this.targetPosition[1] - this.position[1];
+                const dz = this.targetPosition[2] - this.position[2];
+                const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                
+                if (distance > 0.1) {
+                    this.position[0] += (dx / distance) * this.moveSpeed;
+                    this.position[1] += (dy / distance) * this.moveSpeed;
+                    this.position[2] += (dz / distance) * this.moveSpeed;
+                }
+            }
+            
+            orbitMovement() {
+                // Circular movement around orbit center
+                this.orbitAngle += this.moveSpeed * 0.5;
+                this.position[0] = this.orbitCenter[0] + Math.cos(this.orbitAngle) * this.orbitRadius;
+                this.position[2] = this.orbitCenter[2] + Math.sin(this.orbitAngle) * this.orbitRadius;
+                // Slight vertical bobbing
+                this.position[1] = this.orbitCenter[1] + Math.sin(this.orbitAngle * 2) * 0.2;
+            }
+            
+            exploreMovement() {
+                // More erratic movement with some randomness
+                const dx = this.targetPosition[0] - this.position[0];
+                const dy = this.targetPosition[1] - this.position[1];
+                const dz = this.targetPosition[2] - this.position[2];
+                const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                
+                if (distance > 0.1) {
+                    // Add some randomness to the movement
+                    const randomFactor = 0.3;
+                    this.position[0] += (dx / distance) * this.moveSpeed + (Math.random() - 0.5) * randomFactor * this.moveSpeed;
+                    this.position[1] += (dy / distance) * this.moveSpeed + (Math.random() - 0.5) * randomFactor * this.moveSpeed;
+                    this.position[2] += (dz / distance) * this.moveSpeed + (Math.random() - 0.5) * randomFactor * this.moveSpeed;
+                }
+            }
+
+            createTextTexture() {
+                // Create a canvas to render text
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size
+                canvas.width = 256;
+                canvas.height = 64;
+                
+                // Clear canvas with transparent background
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Set text properties
+                ctx.font = '24px Arial';
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Add text shadow for better visibility
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                
+                // Draw the text
+                ctx.fillText(this.name, canvas.width / 2, canvas.height / 2);
+                
+                // Create WebGL texture from canvas
+                const texture = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                
+                return texture;
+            }
+
+            removeLabel() {
+                // Clean up WebGL texture
+                if (this.textTexture) {
+                    gl.deleteTexture(this.textTexture);
+                }
+                // Remove name from used names when orb is destroyed
+                usedNames.delete(this.name);
+            }
+
+            updateLabelPosition() {
+                // No longer needed since we're using 3D billboards
+            }
+        }
+
+        function loadTexture(gl) {
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+
+            const pixel = new Uint8Array([127, 127, 127, 255]);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+
+            const image = document.getElementById('displacementMap');
+            image.onload = function() {
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            };
+            
+            image.src = 'https://picsum.photos/256/256';
+            
+            return texture;
+        }
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+                throw new Error(gl.getShaderInfoLog(shader));
+            }
+            return shader;
+        }
+
+        function initBuffers(gl) {
+            const positionBuffer = gl.createBuffer();
+            const positions = new Float32Array([
+                -1.0, -1.0,
+                1.0, -1.0,
+                -1.0, 1.0,
+                1.0, 1.0,
+            ]);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+            return positionBuffer;
+        }
+
+        function initGL() {
+            const canvas = document.getElementById('glCanvas');
+            gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+            
+            streamStartTime = Date.now();
+            
+            if (!gl) {
+                alert('WebGL not supported');
+                return;
+            }
+
+            try {
+                const vertexShaderSource = document.querySelector('#vertexShader').textContent;
+                const fragmentShaderSource = document.querySelector('#fragmentShader').textContent;
+
+                const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+                const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+                program = gl.createProgram();
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                gl.attachShader(program, vertexShader);
+                gl.attachShader(program, fragmentShader);
+                gl.linkProgram(program);
+
+                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                    throw new Error(`Program link error: ${gl.getProgramInfoLog(program)}`);
+                }
+
+                gl.useProgram(program);
+
+                // Set up position attribute
+                const positionBuffer = initBuffers(gl);
+                const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
+                gl.enableVertexAttribArray(positionLocation);
+                gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+                // Initialize displacement texture
+                const texture = loadTexture(gl);
+                const texLocation = gl.getUniformLocation(program, 'iChannel0');
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.uniform1i(texLocation, 0);
+
+                // video texture
+                const videoUniformLocation = gl.getUniformLocation(program, 'iChannel1');
+                gl.uniform1i(videoUniformLocation, 1); // Tell GLSL: "use texture unit 1"
+
+                // Initialize video texture
+                videoTexture = gl.createTexture();
+                gl.activeTexture(gl.TEXTURE1);
+                gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+                startTime = Date.now();
+                
+                // Start orb management
+                manageOrbs();
+                
+                // Initialize camera mode indicator
+                updateCameraModeIndicator();
+                
+                // Initialize camera rotation based on first keyframe target
+                const firstKeyframe = introKeyframes[0];
+                if (firstKeyframe.target) {
+                    calculateLookAtRotationToTarget(firstKeyframe.target);
+                }
+                
+                requestAnimationFrame(render);
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                alert('Shader error: ' + error.message);
+            }
+        }
+
+        function manageOrbs() {
+            const now = Date.now();
+            
+            orbs = orbs.filter(orb => {
+                const alive = (now - orb.createdAt) < ORB_LIFETIME;
+                if (!alive) {
+                    orb.removeLabel();
+                }
+                return alive;
+            });
+
+            if (orbs.length < MAX_ORBS) {
+                orbs.push(new Orb(getRandomName()));
+            }
+
+            setTimeout(manageOrbs, SPAWN_INTERVAL);
+        }
+
+        function resizeCanvas() {
+            const canvas = gl.canvas;
+            const displayWidth = window.innerWidth;
+            const displayHeight = window.innerHeight;
+
+            if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+                canvas.width = displayWidth;
+                canvas.height = displayHeight;
+                gl.viewport(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function updateOrbUniforms() {
+            const orbPositionsLoc = gl.getUniformLocation(program, 'uOrbPositions');
+            const orbColorsLoc = gl.getUniformLocation(program, 'uOrbColors');
+            const orbCountLoc = gl.getUniformLocation(program, 'uOrbCount');
+
+            const positions = new Float32Array(MAX_ORBS * 3); // Now 6 * 3 = 18
+            const colors = new Float32Array(MAX_ORBS * 3); // Now 6 * 3 = 18
+
+            orbs.forEach((orb, index) => {
+                positions[index * 3] = orb.position[0];
+                positions[index * 3 + 1] = orb.position[1];
+                positions[index * 3 + 2] = orb.position[2];
+
+                colors[index * 3] = orb.color[0];
+                colors[index * 3 + 1] = orb.color[1];
+                colors[index * 3 + 2] = orb.color[2];
+            });
+
+            gl.uniform3fv(orbPositionsLoc, positions);
+            gl.uniform3fv(orbColorsLoc, colors);
+            gl.uniform1i(orbCountLoc, orbs.length);
+        }
+
+        function updateTextUniforms() {
+            const textPositionsLoc = gl.getUniformLocation(program, 'uTextPositions');
+            const textCountLoc = gl.getUniformLocation(program, 'uTextCount');
+            const textTextureLoc = gl.getUniformLocation(program, 'uTextTexture');
+
+            const positions = new Float32Array(MAX_ORBS * 3); // Now 6 * 3 = 18
+
+            orbs.forEach((orb, index) => {
+                positions[index * 3] = orb.textPosition[0];
+                positions[index * 3 + 1] = orb.textPosition[1];
+                positions[index * 3 + 2] = orb.textPosition[2];
+            });
+
+            gl.uniform3fv(textPositionsLoc, positions);
+            gl.uniform1i(textCountLoc, orbs.length);
+            
+            // For now, just use the first orb's texture
+            if (orbs.length > 0) {
+                gl.activeTexture(gl.TEXTURE2);
+                gl.bindTexture(gl.TEXTURE_2D, orbs[0].textTexture);
+                gl.uniform1i(textTextureLoc, 2);
+            }
+        }
+
+        function render() {
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            try {
+                resizeCanvas();
+                updateCamera();
+                updateIntroCamera(); // Update intro camera sequence if active
+
+                // Update orb movements
+                orbs.forEach(orb => orb.updateMovement());
+
+                // Update stream time
+                const elapsed = Date.now() - streamStartTime;
+                const hours = Math.floor(elapsed / 3600000);
+                const minutes = Math.floor((elapsed % 3600000) / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.querySelector('.stream-time').textContent = timeString;
+
+                const timeLocation = gl.getUniformLocation(program, 'iTime');
+                const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
+                const mouseLocation = gl.getUniformLocation(program, 'iMouse');
+                const cameraPosLocation = gl.getUniformLocation(program, 'uCameraPos');
+                const cameraRotLocation = gl.getUniformLocation(program, 'uCameraRot');
+                const usePolarCameraLocation = gl.getUniformLocation(program, 'uUsePolarCamera');
+                const polarRotationLocation = gl.getUniformLocation(program, 'uPolarRotation');
+
+                const time = (Date.now() - startTime) / 1000;
+                gl.uniform1f(timeLocation, time);
+                gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+                gl.uniform2f(mouseLocation, mouseX, 0);
+                gl.uniform3f(cameraPosLocation, cameraPos[0], cameraPos[1], cameraPos[2]);
+                gl.uniform2f(cameraRotLocation, cameraRot[0], cameraRot[1]);
+                gl.uniform1i(usePolarCameraLocation, usePolarCamera ? 1 : 0);
+                gl.uniform2f(polarRotationLocation, polarPitch, polarRotation);
+
+                updateOrbUniforms();
+                updateTextUniforms();
+
+                // Ensure video texture is bound AFTER text texture to prevent conflicts
+                if (video.readyState >= video.HAVE_CURRENT_DATA) {
+                    gl.activeTexture(gl.TEXTURE1);  // Bind to texture unit 1
+                    gl.bindTexture(gl.TEXTURE_2D, videoTexture);
+                    gl.texImage2D(
+                        gl.TEXTURE_2D,
+                        0,
+                        gl.RGBA,
+                        gl.RGBA,
+                        gl.UNSIGNED_BYTE,
+                        video
+                    );
+                }
+                
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                requestAnimationFrame(render);
+            } catch (error) {
+                console.error('Render error:', error);
+            }
+        }
+
+        window.onload = initGL;
+        window.onmousemove = (e) => {
+            if (!mouseLocked) {
+                mouseX = e.clientX;
+            }
+        };
+
+        // Gamepad support
+        let gamepadIndex = -1;
+        let gamepadConnected = false;
+        const GAMEPAD_DEADZONE = 0.15; // Ignore small stick movements
+        const GAMEPAD_SENSITIVITY = 0.8; // Overall sensitivity multiplier
+
+        // Gamepad button mappings (Xbox/PlayStation style)
+        const GAMEPAD_BUTTONS = {
+            A: 0,           // A/X button
+            B: 1,           // B/Circle button  
+            X: 2,           // X/Square button
+            Y: 3,           // Y/Triangle button
+            LB: 4,          // Left bumper/L1
+            RB: 5,          // Right bumper/R1
+            LT: 6,          // Left trigger/L2
+            RT: 7,          // Right trigger/R2
+            SELECT: 8,      // Select/Share button
+            START: 9,       // Start/Options button
+            L_STICK: 10,    // Left stick click
+            R_STICK: 11,    // Right stick click
+            DPAD_UP: 12,    // D-pad up
+            DPAD_DOWN: 13,  // D-pad down
+            DPAD_LEFT: 14,  // D-pad left
+            DPAD_RIGHT: 15  // D-pad right
+        };
+
+        // Gamepad axes mappings
+        const GAMEPAD_AXES = {
+            LEFT_X: 0,      // Left stick horizontal
+            LEFT_Y: 1,      // Left stick vertical
+            RIGHT_X: 2,     // Right stick horizontal
+            RIGHT_Y: 3      // Right stick vertical
+        };
+
+        // Gamepad event listeners
+        window.addEventListener('gamepadconnected', (e) => {
+            console.log('Gamepad connected:', e.gamepad.id);
+            gamepadIndex = e.gamepad.index;
+            gamepadConnected = true;
+            updateCameraModeIndicator();
+        });
+
+        window.addEventListener('gamepaddisconnected', (e) => {
+            console.log('Gamepad disconnected');
+            gamepadConnected = false;
+            gamepadIndex = -1;
+            updateCameraModeIndicator();
+        });
+
+        function getGamepadInput() {
+            if (!gamepadConnected || gamepadIndex === -1) return null;
+            
+            const gamepads = navigator.getGamepads();
+            const gamepad = gamepads[gamepadIndex];
+            
+            if (!gamepad) return null;
+            
+            return {
+                axes: gamepad.axes,
+                buttons: gamepad.buttons
+            };
+        }
+
+        function applyDeadzone(value, deadzone = GAMEPAD_DEADZONE) {
+            return Math.abs(value) < deadzone ? 0 : value;
+        }
+
+        // Gamepad button state tracking for debouncing
+        let lastButtonStates = {};
+
+        function processGamepadInput() {
+            const input = getGamepadInput();
+            if (!input) return;
+            
+            // Handle button presses (with debouncing)
+            
+            // Film mode toggle (Y/Triangle button)
+            if (input.buttons[GAMEPAD_BUTTONS.Y]?.pressed && !lastButtonStates.Y && !isMobile) {
+                filmMode = !filmMode;
+                console.log('Gamepad: Film mode', filmMode ? 'ON' : 'OFF');
+                
+                if (!filmMode) {
+                    cameraVelocity = { x: 0, y: 0, z: 0 };
+                }
+                updateCameraModeIndicator();
+            }
+            
+            // Camera mode cycling (X/Square button)
+            if (input.buttons[GAMEPAD_BUTTONS.X]?.pressed && !lastButtonStates.X && !isMobile) {
+                cameraMode = (cameraMode + 1) % 3;
+                usePolarCamera = (cameraMode === 0);
+                console.log('Gamepad: Camera mode:', CAMERA_MODES[cameraMode]);
+                updateCameraModeIndicator();
+                
+                if (cameraMode !== 1 && mouseLocked) {
+                    document.exitPointerLock();
+                }
+            }
+            
+            // Look-at mode toggle (A/X button)
+            if (input.buttons[GAMEPAD_BUTTONS.A]?.pressed && !lastButtonStates.A && !isMobile) {
+                cameraMode = (cameraMode === 2) ? 1 : 2;
+                usePolarCamera = false;
+                console.log('Gamepad: Camera mode:', CAMERA_MODES[cameraMode]);
+                updateCameraModeIndicator();
+            }
+            
+            // Store button states for next frame
+            lastButtonStates.Y = input.buttons[GAMEPAD_BUTTONS.Y]?.pressed;
+            lastButtonStates.X = input.buttons[GAMEPAD_BUTTONS.X]?.pressed;
+            lastButtonStates.A = input.buttons[GAMEPAD_BUTTONS.A]?.pressed;
+            
+            // Handle analog movement (only in free-fly and look-at modes)
+            if (cameraMode !== 0) {
+                // Left stick for movement (WASD equivalent)
+                const leftX = applyDeadzone(input.axes[GAMEPAD_AXES.LEFT_X]) * GAMEPAD_SENSITIVITY;
+                const leftY = applyDeadzone(input.axes[GAMEPAD_AXES.LEFT_Y]) * GAMEPAD_SENSITIVITY;
+                
+                // Right stick for camera rotation (only in free-fly mode)
+                if (cameraMode === 1) {
+                    const rightX = applyDeadzone(input.axes[GAMEPAD_AXES.RIGHT_X]) * GAMEPAD_SENSITIVITY;
+                    const rightY = applyDeadzone(input.axes[GAMEPAD_AXES.RIGHT_Y]) * GAMEPAD_SENSITIVITY;
+                    
+                    // Apply camera rotation
+                    cameraRot[1] += rightX * 0.03; // yaw
+                    cameraRot[0] += rightY * 0.03; // pitch
+                    
+                    // Clamp pitch
+                    cameraRot[0] = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRot[0]));
+                }
+                
+                // Triggers for up/down movement
+                const leftTrigger = input.buttons[GAMEPAD_BUTTONS.LT]?.value || 0;
+                const rightTrigger = input.buttons[GAMEPAD_BUTTONS.RT]?.value || 0;
+                
+                // Store gamepad movement in keys object for updateCamera to process
+                keys['GamepadW'] = leftY < -GAMEPAD_DEADZONE;
+                keys['GamepadS'] = leftY > GAMEPAD_DEADZONE;
+                keys['GamepadA'] = leftX < -GAMEPAD_DEADZONE;
+                keys['GamepadD'] = leftX > GAMEPAD_DEADZONE;
+                keys['GamepadSpace'] = rightTrigger > 0.1;
+                keys['GamepadShift'] = leftTrigger > 0.1;
+                
+                // Store analog values for smooth movement
+                keys['GamepadLeftX'] = leftX;
+                keys['GamepadLeftY'] = leftY;
+                keys['GamepadRightTrigger'] = rightTrigger;
+                keys['GamepadLeftTrigger'] = leftTrigger;
+            }
+        }
+    </script>
+</body>
+</html>
