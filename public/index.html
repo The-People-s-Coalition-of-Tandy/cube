@@ -898,7 +898,7 @@
     <meta name="bingbot" content="index, follow">
     <meta name="yandexbot" content="index, follow">
     <!-- add social preview image -->
-    <meta property="og:image" content="https://webring.pcotandy.org/Assets/TandyLogo.png">
+    <meta property="og:image" content="https://cube.pcotandy.org/tandycubetrans2.png">
     <meta property="og:title" content="The Tandy Cube">
     <meta property="og:description" content="The Tandy Cube live virtual performance venue">
     <meta property="og:url" content="https://cube.pcotandy.org">
@@ -907,6 +907,17 @@
     <meta property="og:locale" content="en_US">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card meta tags for better social sharing -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Tandy Cube">
+    <meta name="twitter:description" content="The Tandy Cube live virtual performance venue">
+    <meta name="twitter:image" content="https://cube.pcotandy.org/tandycube3.png">
+    <meta name="twitter:image:alt" content="The Tandy Cube - Live Virtual Performance Venue">
+
+    <!-- Additional Open Graph tags for better compatibility -->
+    <meta property="og:image:alt" content="The Tandy Cube - Live Virtual Performance Venue">
+    <meta property="og:image:type" content="image/png">
 
     <!-- icon -->
     <link rel="icon" href="./tandycubetrans2.png">
@@ -1549,7 +1560,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
     </script>
     <script>
         // Video Configuration - Edit these to control video source behavior
-        const USE_MP4_INSTEAD_OF_LIVESTREAM = true; // Set to true to bypass livestream and use MP4
+        const USE_MP4_INSTEAD_OF_LIVESTREAM = false; // Set to true to bypass livestream and use MP4
         const MP4_FALLBACK_URL = './kat.mp4'; // Path to your MP4 fallback file
         const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before falling back to MP4
         
@@ -1848,7 +1859,8 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
 
         // HLS Stream Setup
         let hls = null;
-        const streamUrl = 'https://flipfit-cdn.akamaized.net/flip_hls/6656423247ffe600199e8363-15125d/video_h1.m3u8';
+        // const streamUrl = 'https://flipfit-cdn.akamaized.net/flip_hls/6656423247ffe600199e8363-15125d/video_h1.m3u8';
+        const streamUrl = 'https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8';
 
         function initializeVideo() {
             console.log('Initializing video system...');
