@@ -28,16 +28,27 @@ uniform vec3 uPlanePosition;
 varying vec2 vTextureCoord;
 
 #define EPSILON .0001
-#define MAX_VIEW_STEPS 200
-#define MAX_SHADOW_STEPS 32
-#define OCCLUSION_SAMPLES 4.0
+
+// Mobile performance optimizations - reduce quality on mobile devices
+// These values will be dynamically set based on device capabilities
+#ifdef MOBILE_PERFORMANCE_MODE
+    #define MAX_VIEW_STEPS 100      // Reduced from 200 for mobile
+    #define MAX_SHADOW_STEPS 16     // Reduced from 32 for mobile
+    #define OCCLUSION_SAMPLES 2.0   // Reduced from 4.0 for mobile
+    #define MAX_ORBS 0              // No orbs on mobile
+#else
+    #define MAX_VIEW_STEPS 200      // Full quality for desktop
+    #define MAX_SHADOW_STEPS 32     // Full quality for desktop
+    #define OCCLUSION_SAMPLES 4.0   // Full quality for desktop
+    #define MAX_ORBS 10             // Full orbs for desktop
+#endif
+
 #define OCCLUSION_FACTOR .5
 #define MAX_DEPTH 50.0
 #define BUMP_FACTOR .03
 #define TEX_SCALE_FACTOR .4
 #define ORB_RADIUS 0.1
 #define TEXT_BILLBOARD_SIZE vec2(0.1, 0.03) // Smaller billboards - width and height
-#define MAX_ORBS 10
 
 #define BOX_POS vec3(0.0, 0.0, 0.0)
 #define BOX_DIM vec3(1.0, 1.0, 1.0)
@@ -519,7 +530,7 @@ void main() {
     vec3 pos, dir, eye;
     
     if (uUsePolarCamera) {
-        camPolar(pos, dir, vec3(0.0), uPolarRotation, uPolarDistance, 1.0, fragCoord);
+        camPolar(pos, dir, uPlanePosition, uPolarRotation, uPolarDistance, 1.0, fragCoord);
     } else {
         camFreefly(pos, dir, uCameraPos, uCameraRot, fragCoord);
     }

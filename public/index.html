@@ -1,7 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>The Tandy Cube</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -16,7 +21,7 @@
     <meta name="bingbot" content="index, follow">
     <meta name="yandexbot" content="index, follow">
     <!-- add social preview image -->
-    <meta property="og:image" content="https://cube.pcotandy.org/tandycube3.png">
+    <meta property="og:image" content="https://cube.pcotandy.org/assets/tandycube3.png">
     <meta property="og:title" content="The Tandy Cube">
     <meta property="og:description" content="The Tandy Cube live virtual performance venue">
     <meta property="og:url" content="https://cube.pcotandy.org">
@@ -30,7 +35,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="The Tandy Cube">
     <meta name="twitter:description" content="The Tandy Cube live virtual performance venue">
-    <meta name="twitter:image" content="https://cube.pcotandy.org/tandycube3.png">
+    <meta name="twitter:image" content="https://cube.pcotandy.org/assets/tandycube3.png">
     <meta name="twitter:image:alt" content="The Tandy Cube - Live Virtual Performance Venue">
 
     <!-- Additional Open Graph tags for better compatibility -->
@@ -40,7 +45,30 @@
     <!-- icon -->
     <link rel="icon" href="./assets/tandycubetrans2.webp">
     
-    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: black;
+            font-family: 'Courier New', monospace;
+            color: white;
+            /* Prevent iOS touch behaviors */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            overscroll-behavior: none;
+        }
+        
+        canvas {
+            display: block;
+            /* Prevent iOS touch behaviors on canvas */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+    </style>
 </head>
 <body>
     <div id="playOverlay">
@@ -65,100 +93,28 @@
                         <h3>Select Your Orb Color:</h3>
                         <div class="orb-colors">
                             <div class="orb-option" data-color="#ff4444">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                             <div class="orb-option" data-color="#44ff44">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                             <div class="orb-option" data-color="#4444ff">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                             <div class="orb-option" data-color="#ffff44">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                             <div class="orb-option" data-color="#ff44ff">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                             <div class="orb-option" data-color="#44ffff">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                             <div class="orb-option" data-color="#ff8844">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                             <div class="orb-option" data-color="#8844ff">
-                                <div class="orb-cube-container">
-                                    <div class="orb-cube">
-                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
-                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
-                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
-                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
-                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
-                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
-                                    </div>
-                                </div>
+                                <div class="orb-retro-button"></div>
                             </div>
                         </div>
                     </div>
@@ -257,12 +213,10 @@
     <div id="chatBubble">
         <div class="chat-header">Instant Message - Blueby</div>
         <div class="chat-content">
-            <span class="username">Blueby:</span> Welcome to the Tandy Cube!<br>
-            Use <strong>WASD</strong> to move around<br>
-            <strong>Space/Shift</strong> for up/down<br>
-            Press <strong>C</strong> to cycle camera modes<br>
-            Press <strong>P</strong> for presets, <strong>G</strong> to log position<br>
-            Press <strong>/</strong> to open chat<br>
+            <div><span class="username">blu3by01:</span> Welcome to the Tandy Cube!</div>
+            <div><span class="username">blu3by01:</span> Use <strong>WASD</strong> to move around</div>
+            <div><span class="username">blu3by01:</span> Press <strong>C</strong> to cycle camera modes</div>
+            <div><span class="username">blu3by01:</span> Press <strong>/</strong> to open chat</div>
         </div>
         <button id="gotItButton" class="got-it-button">Got it!</button>
         <img src="./assets/bluebyneck2.webp" alt="Blueby neck" class="chat-bubble-image">
@@ -602,7 +556,12 @@
         // Mobile/touch support
         let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-        // Camera mode system: 0 = polar, 1 = free-fly, 2 = look-at
+        // Mobile performance optimizations
+        const MOBILE_PERFORMANCE_MODE = isMobile;
+        const MOBILE_RESOLUTION_SCALE = 0.6; // Render at 60% resolution on mobile
+        const MOBILE_MAX_ORBS = 0; // No orbs on mobile for better performance
+        const DESKTOP_MAX_ORBS = 100; // Keep full orbs on desktop
+        
         let cameraMode = isMobile ? 0 : 1; // Start with polar on mobile, free-fly on desktop
         const CAMERA_MODES = ['polar', 'free-fly', 'look-at'];
         const STAGE_TARGET = [0.0, 1.12, 0.0]; // Stage position (PLANE_CENTER)
@@ -912,7 +871,11 @@
         function updateCameraModeIndicator() {
             const indicator = document.getElementById('cameraMode');
             if (isMobile) {
-                indicator.textContent = '📱 Mobile Camera';
+                let mobileText = '📱 Mobile Camera';
+                if (MOBILE_PERFORMANCE_MODE) {
+                    mobileText += ` 🚀 Performance Mode (${Math.floor(MOBILE_RESOLUTION_SCALE * 100)}% res, no orbs)`;
+                }
+                indicator.textContent = mobileText;
                 return;
             }
             
@@ -1356,6 +1319,8 @@
                         console.log('Video started playing');
                         videoStarted = true;
                         playOverlay.classList.add('hidden');
+                        // Show canvas when playOverlay is hidden
+                        document.getElementById('glCanvas').style.display = 'block';
                         
                         // Wait for animation to reach halfway point before starting audio fade
                         setTimeout(() => {
@@ -1427,6 +1392,8 @@
             // After the blink animation completes (0.5s), start the parting animation
             setTimeout(() => {
                 document.getElementById('welcomeScreen').classList.add('hidden');
+                // Show character selection screen when welcome screen is hidden
+                document.getElementById('characterSelection').style.display = 'flex';
             }, 500); // Duration of blink animation
         });
 
@@ -1506,6 +1473,40 @@
                 // Connect to WebSocket with user data
                 connectWebSocketWithUserData(username, selectedColor);
                 
+                // IMPORTANT: Start video immediately on user interaction for iOS compatibility
+                // This ensures the video.play() call happens within the user gesture event
+                if (!videoStarted) {
+                    console.log('Starting video immediately on user interaction (iOS compatibility)...');
+                    // Unmute the video since user has interacted
+                    video.muted = false;
+                    
+                    // Try to start video playback immediately
+                    const immediatePlay = () => {
+                        video.play().then(() => {
+                            console.log('Video started playing immediately');
+                            videoStarted = true;
+                        }).catch(error => {
+                            console.warn('Immediate video playback failed, will retry after animations:', error);
+                            // If immediate play fails, we'll try again in startVideo()
+                        });
+                    };
+                    
+                    // Check if video is ready to play
+                    if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+                        immediatePlay();
+                    } else {
+                        // If not ready, try to load it and play when ready
+                        console.log('Video not ready, attempting to load...');
+                        video.addEventListener('canplay', immediatePlay, { once: true });
+                        
+                        // Also try to trigger loading if video source isn't set
+                        if (!video.src && !isUsingFallback) {
+                            console.log('No video source detected, initializing video...');
+                            initializeVideo();
+                        }
+                    }
+                }
+                
                 // Start the blink animation on the character form
                 characterForm.classList.add('animate');
                 
@@ -1513,9 +1514,25 @@
                 setTimeout(() => {
                     document.getElementById('characterSelection').classList.add('hidden');
                     
-                    // Start the video after the parting animation starts
+                    // Start the video after the parting animation starts (fallback if immediate play failed)
                     setTimeout(() => {
-                        startVideo();
+                        if (!videoStarted) {
+                            console.log('Video not started yet, calling startVideo() as fallback...');
+                            startVideo();
+                        } else {
+                            console.log('Video already started, just handling UI transitions...');
+                            playOverlay.classList.add('hidden');
+                            // Canvas is already shown from earlier fix
+                            
+                            // Set up audio context and fade in audio
+                            const audioNodes = setupAudioContext();
+                            if (audioContext && audioContext.state === 'suspended') {
+                                audioContext.resume();
+                            }
+                            setTimeout(() => {
+                                fadeInAudio(audioNodes);
+                            }, 1200);
+                        }
                         
                         // Show mascot after screen separation animation completes
                         setTimeout(() => {
@@ -1692,11 +1709,37 @@
         });
 
         // Touch event handlers for mobile
+        let inputFieldFocused = false;
+        
+        // Track input field focus to temporarily allow zoom gestures
+        document.addEventListener('focusin', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                inputFieldFocused = true;
+                console.log('Input focused - allowing zoom gestures');
+            }
+        });
+        
+        document.addEventListener('focusout', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                inputFieldFocused = false;
+                console.log('Input unfocused - capturing zoom gestures for camera');
+            }
+        });
+        
         document.addEventListener('touchstart', (e) => {
             // Don't process touch controls until user has joined the cube
             if (!hasJoinedCube) {
                 return;
             }
+            
+            // Allow default zoom behavior when input fields are focused
+            if (inputFieldFocused) {
+                return;
+            }
+            
+            // Prevent all default touch behaviors on iOS
+            e.preventDefault();
+            e.stopPropagation();
             
             if (e.touches.length === 1) {
                 touchStartX = e.touches[0].clientX;
@@ -1714,7 +1757,7 @@
                 isPinching = true;
                 console.log('Pinch started:', { initialPinchDistance, initialPolarDistance });
             }
-        });
+        }, { passive: false });
 
         document.addEventListener('touchmove', (e) => {
             // Don't process touch controls until user has joined the cube
@@ -1722,7 +1765,14 @@
                 return;
             }
             
-            e.preventDefault(); // Prevent scrolling
+            // Allow default zoom behavior when input fields are focused
+            if (inputFieldFocused) {
+                return;
+            }
+            
+            // Aggressively prevent all default behaviors
+            e.preventDefault();
+            e.stopPropagation();
             
             if (e.touches.length === 2 && cameraMode === 0 && isPinching) {
                 // Handle pinch-to-zoom
@@ -1757,13 +1807,22 @@
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
             }
-        });
+        }, { passive: false });
 
         document.addEventListener('touchend', (e) => {
             // Don't process touch controls until user has joined the cube
             if (!hasJoinedCube) {
                 return;
             }
+            
+            // Allow default zoom behavior when input fields are focused
+            if (inputFieldFocused) {
+                return;
+            }
+            
+            // Prevent default behaviors
+            e.preventDefault();
+            e.stopPropagation();
             
             if (e.touches.length < 2) {
                 isPinching = false;
@@ -1774,7 +1833,50 @@
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
             }
-        });
+        }, { passive: false });
+
+        document.addEventListener('touchcancel', (e) => {
+            // Allow default zoom behavior when input fields are focused
+            if (inputFieldFocused) {
+                return;
+            }
+            
+            // Handle touch cancellation
+            e.preventDefault();
+            e.stopPropagation();
+            isPinching = false;
+        }, { passive: false });
+
+        // Additional iOS-specific event prevention
+        document.addEventListener('gesturestart', (e) => {
+            // Allow default zoom behavior when input fields are focused
+            if (inputFieldFocused) {
+                return;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+
+        document.addEventListener('gesturechange', (e) => {
+            // Allow default zoom behavior when input fields are focused
+            if (inputFieldFocused) {
+                return;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+
+        document.addEventListener('gestureend', (e) => {
+            // Allow default zoom behavior when input fields are focused
+            if (inputFieldFocused) {
+                return;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
 
         function updateCamera() {
             // Don't process camera updates until user has joined the cube
@@ -1934,7 +2036,7 @@
         }
 
         // Orb management
-        const MAX_ORBS = 100; // Increased from 6 to test performance impact
+        const MAX_ORBS = MOBILE_PERFORMANCE_MODE ? MOBILE_MAX_ORBS : DESKTOP_MAX_ORBS; // Mobile gets 0 orbs, desktop gets 100
         const MAX_ORB_SIZE = 0.5; // Maximum orb radius - adjust this to change biggest orb size
         const ORB_LIFETIME = 30000; // 30 seconds lifetime for each orb (increased from 10s)
         const SPAWN_INTERVAL = 4000; // 4 seconds between spawns (increased from 3s)
@@ -2305,7 +2407,13 @@
             try {
                 // Load shaders from external files
                 const vertexShaderSource = await loadShaderFile('vert.glsl');
-                const fragmentShaderSource = await loadShaderFile('frag.glsl');
+                let fragmentShaderSource = await loadShaderFile('frag.glsl');
+                
+                // Preprocess fragment shader for mobile performance mode
+                if (MOBILE_PERFORMANCE_MODE) {
+                    fragmentShaderSource = '#define MOBILE_PERFORMANCE_MODE\n' + fragmentShaderSource;
+                    console.log('🚀 Mobile performance mode: Shader optimizations enabled');
+                }
 
                 const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
                 const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -2366,6 +2474,9 @@
                     calculateLookAtRotationToTarget(firstKeyframe.target);
                 }
                 
+                // Show canvas after WebGL initialization is complete
+                canvas.style.display = 'block';
+                
                 requestAnimationFrame(render);
             } catch (error) {
                 console.error('Error during initialization:', error);
@@ -2374,6 +2485,13 @@
         }
 
         function manageOrbs() {
+            // Skip orb management entirely on mobile for better performance
+            if (MOBILE_PERFORMANCE_MODE) {
+                console.log('Mobile performance mode: Orbs disabled');
+                setTimeout(manageOrbs, SPAWN_INTERVAL);
+                return;
+            }
+            
             const now = Date.now();
             
             // Filter out expired AI orbs only (real user orbs don't expire)
@@ -2408,13 +2526,26 @@
 
         function resizeCanvas() {
             const canvas = gl.canvas;
-            const displayWidth = window.innerWidth;
-            const displayHeight = window.innerHeight;
+            let displayWidth = window.innerWidth;
+            let displayHeight = window.innerHeight;
+            
+            // Apply mobile resolution scaling for better performance
+            if (MOBILE_PERFORMANCE_MODE) {
+                displayWidth = Math.floor(displayWidth * MOBILE_RESOLUTION_SCALE);
+                displayHeight = Math.floor(displayHeight * MOBILE_RESOLUTION_SCALE);
+                console.log(`Mobile resolution scaling: ${window.innerWidth}x${window.innerHeight} → ${displayWidth}x${displayHeight}`);
+            }
 
             if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
                 canvas.width = displayWidth;
                 canvas.height = displayHeight;
                 gl.viewport(0, 0, canvas.width, canvas.height);
+                
+                // Update CSS size to maintain full screen appearance on mobile
+                if (MOBILE_PERFORMANCE_MODE) {
+                    canvas.style.width = window.innerWidth + 'px';
+                    canvas.style.height = window.innerHeight + 'px';
+                }
             }
         }
 
@@ -2471,14 +2602,17 @@
                 updateCamera();
                 updateIntroCamera(); // Update intro camera sequence if active
 
-                // Update orb movements
-                orbs.forEach(orb => {
-                    if (orb.isRealUser) {
-                        orb.smoothInterpolate(); // Smooth interpolation for real users
-                    } else {
-                        orb.updateMovement(); // AI movement for fake orbs
-                    }
-                });
+                // Skip orb processing entirely on mobile for better performance
+                if (!MOBILE_PERFORMANCE_MODE) {
+                    // Update orb movements (desktop only)
+                    orbs.forEach(orb => {
+                        if (orb.isRealUser) {
+                            orb.smoothInterpolate(); // Smooth interpolation for real users
+                        } else {
+                            orb.updateMovement(); // AI movement for fake orbs
+                        }
+                    });
+                }
 
                 // Update stream time
                 const elapsed = Date.now() - streamStartTime;
@@ -2499,8 +2633,15 @@
                 gl.uniform2f(uniformLocations.uPolarRotation, polarPitch, polarRotation);
                 gl.uniform1f(uniformLocations.uPolarDistance, polarDistance);
 
-                updateOrbUniforms();
-                updateTextUniforms();
+                // Skip orb and text uniforms on mobile for better performance
+                if (!MOBILE_PERFORMANCE_MODE) {
+                    updateOrbUniforms();
+                    updateTextUniforms();
+                } else {
+                    // Set empty orb data for mobile
+                    gl.uniform1i(uniformLocations.uOrbCount, 0);
+                    gl.uniform1i(uniformLocations.uTextCount, 0);
+                }
 
                 // Bind video texture
                 if (video.readyState >= video.HAVE_CURRENT_DATA) {
@@ -2516,15 +2657,22 @@
                     );
                 }
 
-                // Render scene with efficient text handling
-                renderSceneWithText();
+                // Render scene with mobile-optimized text handling
+                if (MOBILE_PERFORMANCE_MODE) {
+                    // Simple render without text processing for mobile
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                } else {
+                    // Full render with text for desktop
+                    renderSceneWithText();
+                }
                 
                 // Performance monitoring
                 frameCount++;
                 const now = Date.now();
                 if (now - lastPerformanceLog > 5000) { // Log every 5 seconds
                     const fps = frameCount / ((now - lastPerformanceLog) / 1000);
-                    console.log(`Performance: ${fps.toFixed(1)} FPS, ${orbs.length} orbs, ${textureCreationCount} textures created, Canvas pool: ${canvasPool.length} [Text chroma keying: ENABLED]`);
+                    const performanceMode = MOBILE_PERFORMANCE_MODE ? 'MOBILE' : 'DESKTOP';
+                    console.log(`Performance [${performanceMode}]: ${fps.toFixed(1)} FPS, ${orbs.length} orbs, ${textureCreationCount} textures created, Canvas pool: ${canvasPool.length}`);
                     frameCount = 0;
                     lastPerformanceLog = now;
                 }
