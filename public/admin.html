@@ -721,7 +721,7 @@
                 { id: 'brightness', decimals: 1 },
                 { id: 'contrast', decimals: 1 },
                 { id: 'saturation', decimals: 1 },
-                { id: 'chromaThreshold', valueId: 'thresholdValue', decimals: 2 },
+                { id: 'chromaThreshold', valueId: 'thresholdValue', decimals: 2, realTime: true },
                 { id: 'videoPlaneSize', decimals: 2, realTime: true },
                 { id: 'videoPlanePositionX', decimals: 2, realTime: true },
                 { id: 'videoPlanePositionY', decimals: 2, realTime: true },
@@ -754,7 +754,11 @@
                                 this.value = newValue.toFixed(config.decimals);
                                 
                                 if (config.realTime) {
-                                    updateVideoPlaneRealTime();
+                                    if (config.id.startsWith('videoPlane')) {
+                                        updateVideoPlaneRealTime();
+                                    } else if (config.id === 'chromaThreshold') {
+                                        updateChromaKeyRealTime();
+                                    }
                                 }
                             } else {
                                 // Reset to slider value if invalid
@@ -777,9 +781,13 @@
                             valueInput.value = parseFloat(slider.value).toFixed(config.decimals);
                         }
                         
-                        // Handle real-time updates for video plane controls
+                        // Handle real-time updates
                         if (config.realTime) {
-                            updateVideoPlaneRealTime();
+                            if (config.id.startsWith('videoPlane')) {
+                                updateVideoPlaneRealTime();
+                            } else if (config.id === 'chromaThreshold') {
+                                updateChromaKeyRealTime();
+                            }
                         }
                     };
                     
@@ -804,6 +812,20 @@
                                 updateSlider();
                             }
                         });
+                    }
+                }
+            });
+
+            // Add real-time listeners for chroma key controls
+            const chromaControls = ['chromaEnabled', 'chromaR', 'chromaG', 'chromaB'];
+            chromaControls.forEach(controlId => {
+                const control = document.getElementById(controlId);
+                if (control) {
+                    if (control.type === 'checkbox') {
+                        control.addEventListener('change', updateChromaKeyRealTime);
+                    } else {
+                        control.addEventListener('input', updateChromaKeyRealTime);
+                        control.addEventListener('change', updateChromaKeyRealTime);
                     }
                 }
             });
@@ -896,6 +918,95 @@
                     }
                 }
             }, 200); // Reduced from 500ms to 200ms
+        }
+
+        // Real-time chroma key updates with debounced file writes
+        function updateChromaKeyRealTime() {
+            // Prevent overlapping updates
+            if (isUpdating) {
+                return;
+            }
+            isUpdating = true;
+            
+            console.log("updateChromaKeyRealTime function triggered");
+            
+            // Create the configuration update
+            const realtimeConfig = {
+                video: {
+                    chromaKey: {
+                        enabled: document.getElementById('chromaEnabled').checked,
+                        color: [
+                            parseFloat(document.getElementById('chromaR').value),
+                            parseFloat(document.getElementById('chromaG').value),
+                            parseFloat(document.getElementById('chromaB').value)
+                        ],
+                        threshold: parseFloat(document.getElementById('chromaThreshold').value)
+                    }
+                }
+            };
+            
+            console.log('🎨 Real-time chroma config object:', realtimeConfig);
+            
+            // Send immediate update via WebSocket (if connected) - NEVER block this
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = {
+                    type: 'realtime_config_update',
+                    config: realtimeConfig
+                };
+                console.log('📡 Sending chroma WebSocket message:', message);
+                
+                // Use setTimeout to ensure this never blocks
+                setTimeout(() => {
+                    try {
+                        ws.send(JSON.stringify(message));
+                        console.log('✅ Chroma message sent successfully');
+                    } catch (error) {
+                        console.error('❌ Failed to send chroma WebSocket message:', error);
+                    }
+                    // Reset the updating flag after WebSocket send
+                    isUpdating = false;
+                }, 0);
+            } else {
+                console.log('❌ WebSocket not connected for chroma update, readyState:', ws ? ws.readyState : 'null');
+                isUpdating = false;
+            }
+            
+            // Debounce file writes (save to JSON after 200ms of no changes)
+            clearTimeout(configWriteTimeout);
+            configWriteTimeout = setTimeout(async () => {
+                try {
+                    console.log('💾 Saving chroma config to file after debounce...');
+                    
+                    // Use fetch with a shorter timeout to prevent blocking
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+                    
+                    const response = await fetch('/api/config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(realtimeConfig),
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('✅ Chroma config saved to file successfully');
+                    } else {
+                        console.log('❌ Failed to save chroma config to file:', result);
+                    }
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        console.log('⏰ Chroma config save request timed out - continuing with real-time updates');
+                    } else {
+                        logActivity('Error saving chroma key config: ' + error.message);
+                        console.error('❌ Error saving chroma config to file:', error);
+                    }
+                }
+            }, 200);
         }
 
         // Apply all current settings
@@ -1261,6 +1372,7 @@
             const newThreshold = Math.max(0, currentThreshold - 0.05);
             document.getElementById('chromaThreshold').value = newThreshold;
             document.getElementById('thresholdValue').value = newThreshold.toFixed(2);
+            updateChromaKeyRealTime();
         }
 
         // Increase chroma threshold
@@ -1269,6 +1381,7 @@
             const newThreshold = Math.min(1, currentThreshold + 0.05);
             document.getElementById('chromaThreshold').value = newThreshold;
             document.getElementById('thresholdValue').value = newThreshold.toFixed(2);
+            updateChromaKeyRealTime();
         }
 
         // Gamepad initialization and handling

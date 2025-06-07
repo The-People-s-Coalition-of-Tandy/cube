@@ -1,5 +1,15 @@
 precision highp float;
 
+// Hardware compatibility: Ensure consistent precision across different GPUs
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+
+// Additional precision handling for older hardware
+#define PRECISION_EPSILON 0.001
+
 uniform vec2 iResolution;
 uniform float iTime;
 uniform vec2 iMouse;
@@ -63,9 +73,43 @@ varying vec2 vTextureCoord;
 bool isChromaKey(vec3 color) {
     if (!uChromaEnabled) return false;
     
-    // Use distance-based color matching for better accuracy
+    // Use distance-based color matching with hardware-agnostic tolerance
     float distance = length(color - uChromaKeyColor);
-    return distance < uChromaThreshold;
+    
+    // Add a softer falloff for better hardware compatibility
+    // Instead of hard threshold, use a range for semi-transparency
+    float hardThreshold = uChromaThreshold * 0.7; // Fully transparent
+    float softThreshold = uChromaThreshold * 1.3; // Fully opaque
+    
+    // For pure black chroma key, use component-wise checking for better precision
+    if (length(uChromaKeyColor) < 0.1) { // If chroma key color is close to black
+        float maxComponent = max(max(color.r, color.g), color.b);
+        return maxComponent < uChromaThreshold;
+    }
+    
+    return distance < hardThreshold;
+}
+
+// Enhanced chroma key function that returns alpha value for blending
+float getChromaAlpha(vec3 color) {
+    if (!uChromaEnabled) return 1.0;
+    
+    float distance = length(color - uChromaKeyColor);
+    float hardThreshold = uChromaThreshold * 0.7;
+    float softThreshold = uChromaThreshold * 1.3;
+    
+    // For pure black chroma key, use component-wise checking
+    if (length(uChromaKeyColor) < 0.1) {
+        float maxComponent = max(max(color.r, color.g), color.b);
+        if (maxComponent < hardThreshold) return 0.0;
+        if (maxComponent > softThreshold) return 1.0;
+        return smoothstep(hardThreshold, softThreshold, maxComponent);
+    }
+    
+    // Standard distance-based keying with smooth falloff
+    if (distance < hardThreshold) return 0.0;
+    if (distance > softThreshold) return 1.0;
+    return smoothstep(hardThreshold, softThreshold, distance);
 }
 
 // Legacy black chroma key function for text (still using black for text backgrounds)
@@ -371,8 +415,10 @@ float calcShadow(vec3 origin, vec3 lightDir, Light light) {
                     uv.y = 1.0 - uv.y;
                     vec4 tex = safeTextureSample(iChannel1, uv);
         
-                    if (!isChromaKey(tex.rgb)) {
-                        return 0.0; // opaque part of the video plane blocks light
+                    // Use alpha-based chroma key for consistent shadow behavior
+                    float chromaAlpha = getChromaAlpha(tex.rgb);
+                    if (chromaAlpha > 0.1) { // Only block light if significantly opaque
+                        return result * (1.0 - chromaAlpha); // Partial shadow based on alpha
                     }
                 }
             }
@@ -475,8 +521,11 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
 
         vec4 tex = safeTextureSample(iChannel1, uv);
         
-        // Check if this pixel should be keyed out (transparent)
-        if (isChromaKey(tex.rgb)) {
+        // Get chroma key alpha for smooth transparency
+        float chromaAlpha = getChromaAlpha(tex.rgb);
+        
+        // If pixel is fully transparent, raymarch through to background
+        if (chromaAlpha < 0.01) {
             // Pixel is transparent, raymarch through to background
             vec3 deepPos = pos;
             marchThroughField(deepPos, dir, eye, true);
@@ -518,6 +567,20 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
         
         // Apply lighting to the video texture with higher minimum brightness
         vec4 litColor = light.color * tex * clamp(((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion), 0.4, 1.0);
+        
+        // Apply chroma key alpha for hardware-compatible transparency
+        litColor.a *= chromaAlpha;
+        
+        // If semi-transparent, blend with background
+        if (chromaAlpha < 0.99) {
+            vec3 deepPos = pos;
+            marchThroughField(deepPos, dir, eye, true);
+            
+            if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
+                vec4 backgroundColor = calcLighting(deepPos, eye, light, material);
+                litColor = mix(backgroundColor, litColor, chromaAlpha);
+            }
+        }
         
         return litColor;
     }

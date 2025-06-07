@@ -1,17 +1,13 @@
 {
   "video": {
-    "m3u8Url": "./assets/kat.mp4",
-    "brightness": 1,
-    "contrast": 1,
-    "saturation": 1,
     "chromaKey": {
       "enabled": true,
       "color": [
         0,
-        1,
+        0,
         0
       ],
-      "threshold": 0.3
+      "threshold": 0.5
     }
   },
   "scene": {
@@ -30,7 +26,7 @@
       "brightness": 3
     }
   },
-  "lastUpdated": 1749263874067,
+  "lastUpdated": 1749309281124,
   "version": 1,
   "lighting": {
     "ambientIntensity": 0.7,

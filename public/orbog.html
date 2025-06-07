@@ -265,40 +265,56 @@
         /* Mascot styles */
         #mascot {
             position: fixed;
-            top: 20px;
-            right: -300px; /* Start off-screen */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translate(-140px, 0);
             width: 150px;
             height: auto;
-            z-index: 1002;
-            transition: right 1s linear;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.5s ease-out 0.5s;
             pointer-events: none;
         }
 
         #mascot.show {
-            right: 20px; /* Slide to final position */
+            opacity: 1;
+        }
+
+        /* Modal overlay for blueby popup */
+        #bluebyOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+            backdrop-filter: blur(3px);
+        }
+
+        #bluebyOverlay.show {
+            display: block;
         }
 
         #chatBubble {
             position: fixed;
-            top: 40px;
-            right: 180px; /* Final position */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 450px; /* Increased from 300px */
             background: #c0c0c0;
-            color: black;
-            padding: 8px;
-            border: 2px inset #c0c0c0;
+            border: 2px outset #c0c0c0;
             font-family: 'MS Sans Serif', sans-serif;
             font-size: 11px;
-            width: 280px;
-            z-index: 1003;
-            pointer-events: none;
-            opacity: 0;
-            transform: scale(0.3);
-            transition: opacity 0.3s ease-out 1s, transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1s;
+            display: none;
+            z-index: 10002;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
         }
 
         #chatBubble.show {
             opacity: 1;
-            transform: scale(1);
+            transform: translate(-50%, -50%) translate(140px, 0) scale(1);
         }
 
         #chatBubble .chat-header {
@@ -314,8 +330,8 @@
             background: white;
             border: 1px inset #c0c0c0;
             padding: 4px;
-            font-size: 11px;
-            line-height: 1.3;
+            font-size: 14px; /* Increased from 11px */
+            line-height: 1.5; /* Increased for better readability */
         }
 
         #chatBubble .username {
@@ -354,6 +370,44 @@
 
         #mascot.hide, #chatBubble.hide {
             animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        /* Tutorial message styles */
+        .tutorial-message {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .tutorial-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: none;
+            color: rgba(0, 0, 255, 0.7);
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+        .typing-dots {
+            display: inline-block;
+            animation: typingDots 1.5s infinite;
+        }
+
+        @keyframes typingDots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
         }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -406,20 +460,17 @@
         <div id="cameraMode" style="font-size: 12px; opacity: 0.7;">📱 Mobile Camera</div>
     </div>
     
-    <!-- Mascot and chat bubble -->
+    <!-- Mascot and chat bubble with modal overlay -->
+    <div id="bluebyOverlay"></div>
     <img id="mascot" src="./blueby6.png" alt="Mascot">
     <div id="chatBubble">
-        <div class="chat-header">Instant Message - Blueby</div>
+        <div class="chat-header">Tutorial - Blueby</div>
         <div class="chat-content">
-            <span class="username">Blueby:</span> Welcome to the Tandy Cube!<br>
-            Use <strong>WASD</strong> to move around<br>
-            <strong>Space/Shift</strong> for up/down<br>
-            Press <strong>C</strong> to cycle camera modes<br>
-            Press <strong>L</strong> for look-at stage mode<br>
-            Press <strong>F</strong> for smooth film mode (recording)<br>
-            <strong>🎮 Gamepad:</strong> Left stick moves, triggers up/down, Y toggles film mode
+            <div id="tutorialMessages">
+                <!-- Messages will be added dynamically -->
+            </div>
         </div>
-        <button id="gotItButton" class="got-it-button">Got it!</button>
+        <button id="gotItButton" class="got-it-button" style="display: none;">Got it!</button>
     </div>
     
     <img id="displacementMap" src="./displace.png" 
@@ -1104,42 +1155,64 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         let bluebyTimeout = null; // Track the auto-hide timeout
 
         function hideBlueby() {
+            // Clear any ongoing timeouts
+            if (typingTimeout) clearTimeout(typingTimeout);
+            if (messageTimeout) clearTimeout(messageTimeout);
+            
+            // Reset tutorial state
+            currentMessageIndex = 0;
+            
+            // Hide all elements
             const mascot = document.getElementById('mascot');
             const chatBubble = document.getElementById('chatBubble');
+            const overlay = document.getElementById('bluebyOverlay');
             
-            // Clear the auto-hide timeout if it exists
-            if (bluebyTimeout) {
-                clearTimeout(bluebyTimeout);
-                bluebyTimeout = null;
+            if (mascot) mascot.style.display = 'none';
+            if (chatBubble) chatBubble.style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
+            
+            // Clear tutorial messages
+            const tutorialContainer = document.getElementById('tutorialMessages');
+            if (tutorialContainer) {
+                tutorialContainer.innerHTML = '';
             }
             
-            // Hide mascot and chat bubble
-            mascot.classList.add('hide');
-            chatBubble.classList.add('hide');
-            
-            // Remove elements after fade out animation
-            setTimeout(() => {
-                mascot.style.display = 'none';
-                chatBubble.style.display = 'none';
-            }, 500);
+            // Hide the Got it button
+            const gotItButton = document.getElementById('gotItButton');
+            if (gotItButton) {
+                gotItButton.style.display = 'none';
+            }
         }
 
         function showBlueby() {
+            // Show overlay first
+            const overlay = document.getElementById('bluebyOverlay');
+            if (overlay) {
+                overlay.style.display = 'block';
+            }
+            
+            // Show mascot
             const mascot = document.getElementById('mascot');
-            const chatBubble = document.getElementById('chatBubble');
-            const gotItButton = document.getElementById('gotItButton');
+            if (mascot) {
+                mascot.style.display = 'block';
+            }
             
-            // Show mascot and chat bubble
-            mascot.classList.add('show');
-            chatBubble.classList.add('show');
-            
-            // Add click event listener to the "Got it!" button
-            gotItButton.addEventListener('click', hideBlueby);
-            
-            // Auto-hide after 8 seconds
-            bluebyTimeout = setTimeout(() => {
-                hideBlueby();
-            }, 8000);
+            // Show chat bubble after a short delay
+            setTimeout(() => {
+                const chatBubble = document.getElementById('chatBubble');
+                if (chatBubble) {
+                    chatBubble.style.display = 'block';
+                    
+                    // Add click event listener to "Got it!" button
+                    const gotItButton = document.getElementById('gotItButton');
+                    if (gotItButton) {
+                        gotItButton.onclick = hideBlueby;
+                    }
+                    
+                    // Start the tutorial after chat bubble appears
+                    setTimeout(showNextMessage, 1000);
+                }
+            }, 500);
         }
 
         function calculateLookAtRotationToTarget(target) {
@@ -1840,6 +1913,70 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 keys['GamepadLeftY'] = leftY;
                 keys['GamepadRightTrigger'] = rightTrigger;
                 keys['GamepadLeftTrigger'] = leftTrigger;
+            }
+        }
+
+        let currentMessageIndex = 0;
+        let typingTimeout;
+        let messageTimeout;
+
+        const tutorialMessages = [
+            "Hi! I'm Blueby, your guide to The Cube!",
+            "This is a 3D space where you can move around and interact with objects.",
+            "Use WASD keys to move around the space.",
+            "Click and drag to look around and explore.",
+            "Try clicking on objects to interact with them!",
+            "Have fun exploring The Cube!"
+        ];
+
+        function showTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.classList.add('show');
+            }
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.classList.remove('show');
+            }
+        }
+
+        function showNextMessage() {
+            if (currentMessageIndex < tutorialMessages.length) {
+                showTypingIndicator();
+                
+                typingTimeout = setTimeout(() => {
+                    hideTypingIndicator();
+                    
+                    const tutorialContainer = document.getElementById('tutorialMessages');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'tutorial-message';
+                    messageDiv.innerHTML = `<span class="username">Blueby:</span> ${tutorialMessages[currentMessageIndex]}`;
+                    
+                    tutorialContainer.appendChild(messageDiv);
+                    
+                    // Trigger animation
+                    setTimeout(() => {
+                        messageDiv.classList.add('show');
+                    }, 50);
+                    
+                    currentMessageIndex++;
+                    
+                    // Show next message after delay
+                    if (currentMessageIndex < tutorialMessages.length) {
+                        messageTimeout = setTimeout(showNextMessage, 2500);
+                    } else {
+                        // Show "Got it!" button after all messages
+                        setTimeout(() => {
+                            const gotItButton = document.getElementById('gotItButton');
+                            if (gotItButton) {
+                                gotItButton.style.display = 'block';
+                            }
+                        }, 1000);
+                    }
+                }, 1500); // Typing delay
             }
         }
     </script>

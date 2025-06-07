@@ -208,17 +208,17 @@
         </div>
     </div>
     
-    <!-- Mascot and chat bubble -->
+    <!-- Mascot and chat bubble with modal overlay -->
+    <div id="bluebyOverlay"></div>
     <img id="mascot" src="./assets/blueby6.png" alt="Mascot">
     <div id="chatBubble">
-        <div class="chat-header">Instant Message - Blueby</div>
+        <div class="chat-header">Tutorial - Blueby</div>
         <div class="chat-content">
-            <div><span class="username">blu3by01:</span> Welcome to the Tandy Cube!</div>
-            <div><span class="username">blu3by01:</span> Use <strong>WASD</strong> to move around</div>
-            <div><span class="username">blu3by01:</span> Press <strong>C</strong> to cycle camera modes</div>
-            <div><span class="username">blu3by01:</span> Press <strong>/</strong> to open chat</div>
+            <div id="tutorialMessages">
+                <!-- Messages will be added dynamically -->
+            </div>
         </div>
-        <button id="gotItButton" class="got-it-button">Got it!</button>
+        <button id="gotItButton" class="got-it-button" style="display: none;">Got it!</button>
         <img src="./assets/bluebyneck2.webp" alt="Blueby neck" class="chat-bubble-image">
     </div>
     
@@ -282,17 +282,33 @@
         }
 
         function applyConfiguration(config) {
-            console.log('Applying configuration:', config);
+            console.log('🔧 Applying configuration:', config);
+            console.log('📋 Current config before merge:', currentConfig);
             
             // If we have a current config and this is a partial update, merge them
             if (currentConfig && config) {
                 // Deep merge the configurations
                 const mergedConfig = JSON.parse(JSON.stringify(currentConfig)); // Deep clone current config
+                console.log('🔄 Starting merge with cloned config:', mergedConfig);
                 
                 // Merge video settings if present
                 if (config.video) {
                     if (!mergedConfig.video) mergedConfig.video = {};
-                    Object.assign(mergedConfig.video, config.video);
+                    
+                    // Handle nested chroma key settings properly
+                    if (config.video.chromaKey) {
+                        if (!mergedConfig.video.chromaKey) mergedConfig.video.chromaKey = {};
+                        console.log('🎨 Merging chroma key - before:', mergedConfig.video.chromaKey);
+                        Object.assign(mergedConfig.video.chromaKey, config.video.chromaKey);
+                        console.log('🎨 Merging chroma key - after:', mergedConfig.video.chromaKey);
+                    }
+                    
+                    // Merge other video settings
+                    Object.keys(config.video).forEach(key => {
+                        if (key !== 'chromaKey') {
+                            mergedConfig.video[key] = config.video[key];
+                        }
+                    });
                 }
                 
                 // Merge videoPlane settings if present
@@ -300,22 +316,21 @@
                     mergedConfig.videoPlane = config.videoPlane;
                 }
                 
-                // Merge chromaKey settings if present
-                if (config.chromaKey) {
-                    mergedConfig.chromaKey = config.chromaKey;
-                }
-                
                 // Merge brightness if present
                 if (config.brightness !== undefined) {
                     mergedConfig.brightness = config.brightness;
                 }
                 
-                console.log('🔄 Merged configuration:', mergedConfig);
+                console.log('✅ Final merged configuration:', mergedConfig);
                 config = mergedConfig;
                 currentConfig = mergedConfig; // Update current config
             } else if (config) {
                 // This is a full config update
+                console.log('📝 Full config update (no merge needed)');
                 currentConfig = config;
+            } else {
+                console.warn('⚠️ No config provided to applyConfiguration');
+                return;
             }
             
             // Update video source if changed (only if video config is present)
@@ -340,15 +355,47 @@
                     return;
                 }
                 
-                // Apply chroma key settings - check both locations for compatibility
-                const chromaKey = config.chromaKey || config.video?.chromaKey || {
-                    enabled: false,
-                    color: [0.0, 1.0, 0.0],
-                    threshold: 0.3
-                };
+                // Apply chroma key settings - with better fallback logic
+                let chromaKey;
+                if (config.video?.chromaKey) {
+                    chromaKey = config.video.chromaKey;
+                    console.log('✅ Using chroma key from config:', chromaKey);
+                } else {
+                    // Only use fallback if we truly have no chroma key config
+                    chromaKey = {
+                        enabled: false,
+                        color: [0.0, 1.0, 0.0],
+                        threshold: 0.3
+                    };
+                    console.log('⚠️ Using fallback chroma key (no config found):', chromaKey);
+                }
 
+                // Hardware-specific threshold adjustment for better compatibility
+                let adjustedThreshold = chromaKey.threshold;
                 
-                console.log('🔍 Chroma key settings found:', chromaKey);
+                // Detect GPU and adjust threshold for older hardware
+                const renderer = gl.getParameter(gl.RENDERER);
+                const vendor = gl.getParameter(gl.VENDOR);
+                console.log('🖥️ GPU Info:', { renderer, vendor });
+                
+                // Check for older Intel integrated graphics or pre-M1 hardware
+                // const isOlderHardware = renderer.includes('Intel') || 
+                //                        renderer.includes('HD Graphics') ||
+                //                        renderer.includes('Iris') ||
+                //                        vendor.includes('Intel');
+                
+                // if (isOlderHardware) {
+                //     // Increase threshold for older hardware to compensate for precision issues
+                //     adjustedThreshold = chromaKey.threshold * 1.2;
+                //     console.log('🔧 Older hardware detected, adjusting chroma threshold:', chromaKey.threshold, '→', adjustedThreshold);
+                // }
+                
+                console.log('🔍 Final chroma key settings:', {
+                    enabled: chromaKey.enabled,
+                    color: chromaKey.color,
+                    originalThreshold: chromaKey.threshold,
+                    adjustedThreshold: adjustedThreshold
+                });
                 
                 // Ensure uniform locations are cached
                 if (!uniformLocations.uChromaKeyColor) {
@@ -365,8 +412,8 @@
                 }
                 
                 if (uniformLocations.uChromaThreshold) {
-                    gl.uniform1f(uniformLocations.uChromaThreshold, chromaKey.threshold);
-                    console.log('✅ Applied chroma key threshold:', chromaKey.threshold);
+                    gl.uniform1f(uniformLocations.uChromaThreshold, adjustedThreshold);
+                    console.log('✅ Applied chroma key threshold:', adjustedThreshold);
                 }
                 
                 if (uniformLocations.uChromaEnabled) {
@@ -796,26 +843,120 @@
         }
 
         let bluebyTimeout = null; // Track the auto-hide timeout
+        const tutorialMessages = [
+            "Hi! I'm Blueby, your guide to The Cube!",
+            "This is a 3D space where you can move around and interact with objects.",
+            "Use WASD keys to move around the space.",
+            "Click and drag to look around and explore.",
+            "Try clicking on objects to interact with them!",
+            "Have fun exploring The Cube!"
+        ];
+        let currentMessageIndex = 0;
+        let isTyping = false;
 
         function hideBlueby() {
             const mascot = document.getElementById('mascot');
             const chatBubble = document.getElementById('chatBubble');
+            const overlay = document.getElementById('bluebyOverlay');
             
-            // Clear the auto-hide timeout if it exists
+            // Clear any ongoing timeouts
             if (bluebyTimeout) {
                 clearTimeout(bluebyTimeout);
                 bluebyTimeout = null;
             }
             
-            // Hide mascot and chat bubble
-            mascot.classList.add('hide');
-            chatBubble.classList.add('hide');
+            // Hide mascot, chat bubble, and overlay
+            mascot.classList.remove('show');
+            chatBubble.classList.remove('show');
+            overlay.classList.remove('show');
             
             // Remove elements after fade out animation
             setTimeout(() => {
                 mascot.style.display = 'none';
                 chatBubble.style.display = 'none';
+                overlay.style.display = 'none';
+                
+                // Reset tutorial state
+                currentMessageIndex = 0;
+                isTyping = false;
+                const tutorialContainer = document.getElementById('tutorialMessages');
+                tutorialContainer.innerHTML = '';
+                const gotItButton = document.getElementById('gotItButton');
+                gotItButton.style.display = 'none';
             }, 500);
+        }
+
+        function showTypingIndicator() {
+            const tutorialContainer = document.getElementById('tutorialMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator show';
+            typingDiv.innerHTML = '<span class="username">blu3by01:</span> <span class="typing-dots">typing</span>';
+            tutorialContainer.appendChild(typingDiv);
+            
+            // Scroll to bottom if needed
+            tutorialContainer.scrollTop = tutorialContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function showNextMessage() {
+            if (currentMessageIndex >= tutorialMessages.length || isTyping) {
+                return;
+            }
+            
+            isTyping = true;
+            showTypingIndicator();
+            
+            // Show typing for 1-2 seconds
+            const typingDuration = 1000 + Math.random() * 1000;
+            
+            setTimeout(() => {
+                hideTypingIndicator();
+                
+                const tutorialContainer = document.getElementById('tutorialMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'tutorial-message';
+                messageDiv.innerHTML = `<span class="username">blu3by01:</span> ${tutorialMessages[currentMessageIndex]}`;
+                
+                tutorialContainer.appendChild(messageDiv);
+                
+                // Trigger animation
+                setTimeout(() => {
+                    messageDiv.classList.add('show');
+                }, 50);
+                
+                // Scroll to bottom if needed
+                tutorialContainer.scrollTop = tutorialContainer.scrollHeight;
+                
+                currentMessageIndex++;
+                isTyping = false;
+                
+                // Schedule next message or show "Got it!" button
+                if (currentMessageIndex < tutorialMessages.length) {
+                    setTimeout(() => {
+                        showNextMessage();
+                    }, 1500); // Wait 1.5 seconds before next message
+                } else {
+                    // All messages sent, show "Got it!" button
+                    setTimeout(() => {
+                        const gotItButton = document.getElementById('gotItButton');
+                        gotItButton.style.display = 'block';
+                        gotItButton.style.opacity = '0';
+                        gotItButton.style.transform = 'translateY(10px)';
+                        gotItButton.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                        
+                        setTimeout(() => {
+                            gotItButton.style.opacity = '1';
+                            gotItButton.style.transform = 'translateY(0)';
+                        }, 50);
+                    }, 800);
+                }
+            }, typingDuration);
         }
 
         function showBlueby() {
@@ -826,19 +967,38 @@
             
             const mascot = document.getElementById('mascot');
             const chatBubble = document.getElementById('chatBubble');
+            const overlay = document.getElementById('bluebyOverlay');
             const gotItButton = document.getElementById('gotItButton');
             
-            // Show mascot and chat bubble
-            mascot.classList.add('show');
-            chatBubble.classList.add('show');
+            // Reset tutorial state
+            currentMessageIndex = 0;
+            isTyping = false;
+            const tutorialContainer = document.getElementById('tutorialMessages');
+            tutorialContainer.innerHTML = '';
+            gotItButton.style.display = 'none';
             
-            // Add click event listener to the "Got it!" button
+            // Show overlay first, then mascot and chat bubble
+            overlay.style.display = 'block';
+            mascot.style.display = 'block';
+            chatBubble.style.display = 'block';
+            
+            // Trigger animations
+            setTimeout(() => {
+                overlay.classList.add('show');
+                mascot.classList.add('show');
+                chatBubble.classList.add('show');
+                
+                // Start the tutorial sequence after the chat bubble appears
+                setTimeout(() => {
+                    showNextMessage();
+                }, 1000);
+            }, 50);
+            
+            // Add click event listener to the "Got it!" button (remove any existing listeners)
+            gotItButton.removeEventListener('click', hideBlueby);
             gotItButton.addEventListener('click', hideBlueby);
             
-            // Auto-hide after 16 seconds
-            bluebyTimeout = setTimeout(() => {
-                hideBlueby();
-            }, 16000);
+            // No auto-hide - user must click "Got it!"
         }
 
         function calculateLookAtRotationToTarget(target) {
@@ -2402,6 +2562,33 @@
             if (!gl) {
                 alert('WebGL not supported');
                 return;
+            }
+
+            // Log detailed GPU information for debugging
+            console.log('🖥️ WebGL Context Info:');
+            console.log('  Renderer:', gl.getParameter(gl.RENDERER));
+            console.log('  Vendor:', gl.getParameter(gl.VENDOR));
+            console.log('  Version:', gl.getParameter(gl.VERSION));
+            console.log('  Shading Language Version:', gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+            
+            // Check for high precision float support
+            const fragmentPrecision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+            console.log('  Fragment Shader HIGH_FLOAT precision:', {
+                precision: fragmentPrecision.precision,
+                rangeMin: fragmentPrecision.rangeMin,
+                rangeMax: fragmentPrecision.rangeMax
+            });
+            
+            // Check for extensions that might affect rendering
+            const extensions = gl.getSupportedExtensions();
+            console.log('  Supported Extensions:', extensions.length, 'total');
+            
+            // Check for specific extensions that might help with precision
+            const precisionExtensions = extensions.filter(ext => 
+                ext.includes('precision') || ext.includes('float') || ext.includes('texture')
+            );
+            if (precisionExtensions.length > 0) {
+                console.log('  Precision-related extensions:', precisionExtensions);
             }
 
             try {
