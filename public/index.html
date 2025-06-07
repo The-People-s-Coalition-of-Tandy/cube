@@ -379,16 +379,16 @@
                 console.log('🖥️ GPU Info:', { renderer, vendor });
                 
                 // Check for older Intel integrated graphics or pre-M1 hardware
-                // const isOlderHardware = renderer.includes('Intel') || 
-                //                        renderer.includes('HD Graphics') ||
-                //                        renderer.includes('Iris') ||
-                //                        vendor.includes('Intel');
+                const isOlderHardware = renderer.includes('Intel') || 
+                                       renderer.includes('HD Graphics') ||
+                                       renderer.includes('Iris') ||
+                                       vendor.includes('Intel');
                 
-                // if (isOlderHardware) {
-                //     // Increase threshold for older hardware to compensate for precision issues
-                //     adjustedThreshold = chromaKey.threshold * 1.2;
-                //     console.log('🔧 Older hardware detected, adjusting chroma threshold:', chromaKey.threshold, '→', adjustedThreshold);
-                // }
+                if (isOlderHardware) {
+                    // Increase threshold for older hardware to compensate for precision issues
+                    adjustedThreshold = chromaKey.threshold * 1.2;
+                    console.log('🔧 Older hardware detected, adjusting chroma threshold:', chromaKey.threshold, '→', adjustedThreshold);
+                }
                 
                 console.log('🔍 Final chroma key settings:', {
                     enabled: chromaKey.enabled,

@@ -7,7 +7,7 @@
         0,
         0
       ],
-      "threshold": 0.5
+      "threshold": 0.15
     }
   },
   "scene": {
@@ -26,7 +26,7 @@
       "brightness": 3
     }
   },
-  "lastUpdated": 1749309281124,
+  "lastUpdated": 1749311589770,
   "version": 1,
   "lighting": {
     "ambientIntensity": 0.7,
