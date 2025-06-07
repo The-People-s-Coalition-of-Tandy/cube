@@ -4,890 +4,8 @@
     <title>The Tandy Cube</title>
 
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <style>
 
-        @font-face {
-            font-family: 'ag5';
-            src: url('./AG5.ttf') format('truetype');
-        }
-
-        @font-face {
-            font-family: 'frutiger';
-            src: url('./Frutiger.ttf') format('truetype');
-        }
-
-        @font-face {
-            font-family: 'cute';
-            src: url('./CutieTopRegular-VArx.ttf') format('truetype');
-        }
-
-        canvas {
-            width: 100vw;
-            height: 100vh;
-            display: block;
-            position: absolute;
-        }
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: black;
-            font-family: 'ag5';
-        }
-        #labels {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-        }
-        .label {
-            position: absolute;
-            transform: translate(-50%, -100%);
-            color: white;
-            font-family: 'times new roman';
-            font-size: 14px;
-            text-shadow: 0 0 3px black, 0 0 3px black, 0 0 3px black;
-            white-space: nowrap;
-            transition: opacity 0.3s;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        .label::after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            left: 50%;
-            width: 1px;
-            height: 15px;
-            background: white;
-            box-shadow: 0 0 3px black;
-        }
-        #streamInfo {
-            display: none !important;
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            color: rgb(133, 133, 133);
-            font-family: 'times new roman';
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .live-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            /* background: rgba(0, 0, 0, 0.7); */
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            margin-left: -8px;
-            background: #ff0000;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        .live-dot.no-animation {
-            animation: none;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
-        .stream-time, #date {
-            /* background: rgba(0, 0, 0, 0.7); */
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .stream-time {
-            font-family: 'cute';
-        }
-        .now-playing {
-            /* background: rgba(0, 0, 0, 0.7); */
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        #playOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            z-index: 1000;
-            /* cursor: pointer; */
-            z-index: 1001;
-            font-family: 'times new roman';
-            overflow: hidden;
-        }
-        
-        #overlayLeft, #overlayRight {
-            position: absolute;
-            top: 0;
-            height: 50%;
-            width: 100%;
-            /* background: black; */
-            background: url('./201.jpg');
-            /* background: url('./gmbg.gif'); */
-            /* background: url('./bck-grid.gif'); */
-            transition: transform 2.4s ease-in .5s;
-        }
-        
-        #overlayLeft {
-            top: 0;
-        }
-        
-        #overlayRight {
-            top: 50%;
-        }
-        
-        #playOverlay.hidden #overlayLeft {
-            transform: translateY(-100%);
-        }
-        
-        #playOverlay.hidden #overlayRight {
-            transform: translateY(100%);
-        }
-        
-        #playOverlay.hidden #passwordForm {
-            opacity: 0;
-        }
-
-        #cubeStage {
-            /* width: 400px; */
-            /* filter: brightness(0.5); */
-        }
-
-        .current-event {
-            
-        }
-        #passwordForm {
-            /* background: rgb(0, 0, 0); */
-            padding: 30px;
-            /* backdrop-filter: blur(5px); */
-            text-align: center;
-            /* border: 4px ridge gray; */
-            z-index: 10;
-            position: relative;
-            transition: opacity 0.5s ease;
-        }
-
-        #passwordForm.animate {
-            animation: blink .5s forwards;
-            animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        @keyframes blink {
-            0% {transform: scaleY(1) scaleX(1);}
-            30% {transform: scaleY(0.01) scaleX(1); filter: blur(10px) brightness(10.5);}
-            100% {transform: scaleY(0) scaleX(0);
-            filter: blur(10px) brightness(10.5);}
-        }
-
-        #enterButton {
-            border-radius: 0;
-            /* color: #fff; */
-            /* padding: 10px 20px; */
-            /* font-family: 'ag5', monospace; */
-
-        }
-        #enterButton:hover {
-            /* background: rgba(255,255,255,0.3); */
-        }
-        #passwordMessage {
-            margin-top: 20px;
-            font-size: 14px;
-            opacity: 0.7;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-        #playOverlay p {
-            font-family: 'cute';
-            font-size: 18px;
-            margin: 0;
-            text-align: center;
-        }
-
-        /* Add particles for playful effect during transition */
-        .audio-particle {
-            display: none;
-        }
-
-        /* Remove the ripple animation */
-        @keyframes ripple {
-            0% { transform: scale(1); filter: none; }
-            100% { transform: scale(1); filter: none; }
-        }
-
-        .canvas-ripple {
-            animation: none;
-        }
-
-        #playOverlay.hidden #passwordForm {
-            opacity: 0;
-        }
-
-        .old-hr {
-            width: 100%;
-            height: 1px;
-            background: rgb(0, 0, 0);
-            border-top: 1px solid rgb(55, 55, 55);
-            margin: 10px 0;
-        }
-
-        .event-time {
-            font-size: 18px;
-            margin: 0;
-            text-align: center;
-            /* color: rgb(255, 178, 178); */
-            /* font-family: 'ag5', monospace; */
-            /* animation: concert 1.5s infinite alternate ease-in-out; */
-        }
-
-        @keyframes concert {
-            0% { opacity: 1; }
-            100% { opacity: 0.5; }
-        }
-
-        /* Event Calendar Styles */
-        .event-calendar {
-            margin: 20px 0;
-            font-family: 'Arial Narrow';
-            font-size: 12px;
-            /* opacity: 0.8; */
-        }
-
-        .calendar-title {
-            font-size: 12px; /* Reduced from 14px */
-            color: #ffffff; /* Dimmed from #ffff00 */
-            background-color: #000000;
-            text-shadow: 1px 1px 0px black;
-        }
-
-        .calendar-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #666;
-            background: #0000ff;
-            /* background: rgba(192, 192, 192, 0.3);  */
-            /* font-family: 'MS Sans Serif', sans-serif; */
-            font-size: 11pt; /* Reduced from 11px */
-        }
-
-        .calendar-table th {
-            /* background: rgba(0, 128, 255, 0.6); */
-            /* color: #ccc;  */
-            padding: 3px 4px; /* Reduced padding */
-            border: 1px solid #555; /* Subtle borders */
-            font-weight: normal; /* Less bold */
-            text-align: center;
-
-            /* font-size: 12pt; Smaller header text */
-        }
-
-        .calendar-table td {
-            padding: 2px 4px; /* Reduced padding */
-            border: 1px solid #444; /* Subtle borders */
-            /* background: rgba(255, 255, 255, 0.1); */
-            vertical-align: top;
-        }
-
-        .calendar-table tr:nth-child(even) td {
-            /* background: rgba(240, 240, 240, 0.05); */
-        }
-
-        .event-date {
-            font-weight: normal; /* Less bold */
-            /* color: #999; */
-            white-space: nowrap;
-            /* font-size: 10px; */
-        }
-
-        .event-name {
-            /* color: #666; */
-            /* font-size: 10px; */
-        }
-
-        .event-type {
-            /* color: #555; */
-            font-style: italic;
-            /* font-size: 10px; Even smaller */
-        }
-
-        .event-weird {
-            /* color: #cc6666 !important; */
-            font-weight: normal; /* Less bold */
-        }
-
-        .calendar-note {
-            font-size: 8px; /* Reduced from 10px */
-            color: #555; /* Dimmed */
-            margin-top: 6px; /* Reduced spacing */
-            font-style: italic;
-        }
-
-        /* Enhanced main content hierarchy */
-        h1 {
-            font-size: 48px !important; /* Much larger title */
-            margin: 20px 0 !important;
-            text-shadow: 3px 3px 0px black, -1px -1px 0px black, 1px -1px 0px black, -1px 1px 0px black !important;
-            font-weight: bold !important;
-            letter-spacing: 2px;
-        }
-
-        .event-status {
-            margin: 15px 0 !important;
-        }
-
-        .event-time {
-            font-size: 24px !important; /* Larger current event text */
-            margin: 10px 0 !important;
-            text-align: center;
-            /* color: #ffff88 !important; Brighter yellow */
-            text-shadow: 2px 2px 0px black !important;
-            font-weight: bold !important;
-        }
-
-        .event-artist {
-            font-size: 2em; /* Larger artist name */
-            margin: 8px 0 !important;
-            color: #ffffff !important; /* Bright magenta */
-            text-decoration: underline;
-            text-shadow: 2px 2px 0px black !important;
-            font-weight: bold !important;
-            font-family: 'ag5', monospace;
-        }
-
-        .event-title {
-            font-size: 16px !important; /* Larger event title */
-            margin: 8px 0 !important;
-            color: #00ffff !important; /* Bright cyan */
-            text-shadow: 1px 1px 0px black !important;
-        }
-
-        #enterButton {
-            border-radius: 0;
-            padding: 2px 20px;
-            border: 1px outset #fff; 
-            outline: 1px solid #000;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-            font-size: 20px !important; /* Larger button text */
-            /* font-weight: bold !important; */
-            cursor: pointer;
-            /* transition: all 0.3s; */
-            /* border: 3px outset #c0c0c0 !important; */
-            /* text-shadow: 1px 1px 0px black !important; */
-            /* box-shadow: 3px 3px 5px rgba(0,0,0,0.5) !important; */
-            margin: 20px 0 !important;
-        }
-
-        #enterButton:hover {
-            /* background: linear-gradient(to bottom, #0099ff, #0077dd) !important; */
-            /* transform: translateY(-2px); */
-            /* box-shadow: 5px 5px 8px rgba(0,0,0,0.7) !important; */
-        }
-
-        #enterButton:active {
-            transform: translateY(0px);
-            border: 3px inset #c0c0c0 !important;
-            /* box-shadow: 1px 1px 2px rgba(0,0,0,0.5) !important; */
-        }
-
-        /* Mascot styles */
-        #mascot {
-            position: fixed;
-            top: 20px;
-            right: -300px; /* Start off-screen */
-            width: 150px;
-            height: auto;
-            z-index: 1002;
-            transition: right 1s linear;
-            pointer-events: none;
-        }
-
-        #mascot.show {
-            right: 20px; /* Slide to final position */
-        }
-
-        #chatBubble {
-            position: fixed;
-            top: 40px;
-            right: 180px; /* Final position */
-            background: #c0c0c0;
-            color: black;
-            padding: 8px;
-            border: 2px inset #c0c0c0;
-            font-family: 'MS Sans Serif', sans-serif;
-            font-size: 11px;
-            width: 280px;
-            z-index: 1003;
-            pointer-events: none;
-            opacity: 0;
-            transform: scale(0.3);
-            transition: opacity 0.3s ease-out 1s, transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1s;
-        }
-
-        #chatBubble.show {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        #chatBubble .chat-header {
-            background: linear-gradient(to bottom, #0080ff, #0060c0);
-            color: white;
-            padding: 2px 6px;
-            margin: -8px -8px 4px -8px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        #chatBubble .chat-content {
-            background: white;
-            border: 1px inset #c0c0c0;
-            padding: 4px;
-            font-size: 11px;
-            line-height: 1.3;
-        }
-
-        #chatBubble .username {
-            color: #0000ff;
-            font-weight: bold;
-        }
-
-        /* Auto-hide animation */
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        #mascot.hide, #chatBubble.hide {
-            animation: fadeOut 0.5s ease-out forwards;
-        }
-
-        /* 3D Spinning Cube for Performer Info */
-        .performer-cube-container {
-            perspective: 1000px;
-            margin: 20px 0;
-            height: 120px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .performer-cube {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            transform-style: preserve-3d;
-            animation: spinCube 8s infinite linear;
-        }
-
-        .cube-face {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgb(166, 166, 166);
-            background: url(./gmbg.gif) no-repeat center center;
-            /* border: 2px solid #0080ff; */
-            backdrop-filter: blur(2px);
-            text-shadow: 2px 2px 0px black;
-            padding: 5px;
-            box-sizing: border-box;
-        }
-
-        .cube-face.front {
-            transform: translateZ(50px);
-        }
-
-        .cube-face.back {
-            transform: translateZ(-50px) rotateY(180deg);
-        }
-
-        .cube-face.right {
-            transform: rotateY(90deg) translateZ(50px);
-        }
-
-        .cube-face.left {
-            transform: rotateY(-90deg) translateZ(50px);
-        }
-
-        .cube-face.top {
-            transform: rotateX(90deg) translateZ(50px);
-        }
-
-        .cube-face.bottom {
-            transform: rotateX(-90deg) translateZ(50px);
-        }
-
-        @keyframes spinCube {
-            0% { transform: rotateX(0deg) rotateY(0deg); }
-            100% { transform: rotateX(0deg) rotateY(180deg); }
-        }
-
-        .cube-artist {
-            font-size: 12px !important;
-            margin: 2px 0 !important;
-            color: #ff6aff !important;
-            text-decoration: underline;
-            font-weight: bold !important;
-            text-align: center;
-            line-height: 1.2;
-        }
-
-        .cube-title {
-            font-size: 10px !important;
-            margin: 2px 0 !important;
-            color: #88ffff !important;
-            font-style: italic;
-            text-align: center;
-            line-height: 1.1;
-        }
-
-        #myst {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1000;
-            pointer-events: none;
-            width: 200px;
-            height: auto;
-            filter: blur(1px);
-
-            /* opacity: 0; */
-            transition: opacity 0.5s ease-out;
-        }
-        
-        /* Mobile Responsive Styles */
-        @media screen and (max-width: 768px) {
-            /* Logo responsive sizing */
-            h1 img {
-                width: 90vw !important;
-                max-width: 300px !important;
-                height: auto !important;
-            }
-
-            /* Table responsive styling - simple max-width approach */
-            .calendar-table {
-                width: 90%;
-                max-width: 90%;
-                font-size: 10px;
-                overflow-x: auto;
-                display: table;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .calendar-table th,
-            .calendar-table td {
-                padding: 4px 6px;
-                font-size: 10px;
-                white-space: nowrap;
-            }
-
-            /* Mascot adjustments for mobile */
-            #mascot {
-                width: 100px;
-                top: 10px;
-                right: -200px;
-            }
-
-            #mascot.show {
-                right: 10px;
-            }
-
-            #chatBubble {
-                width: 200px;
-                right: 120px;
-                font-size: 10px;
-                padding: 6px;
-            }
-
-            /* Stream info adjustments */
-            #streamInfo {
-                top: 10px;
-                left: 10px;
-                font-size: 12px;
-                flex-wrap: wrap;
-            }
-
-            /* Button adjustments */
-            #enterButton {
-                font-size: 16px !important;
-                padding: 8px 16px !important;
-            }
-
-            /* Text size adjustments */
-            h1 {
-                font-size: 32px !important;
-                margin: 10px 0 !important;
-            }
-
-            .event-time {
-                font-size: 18px !important;
-            }
-
-            .event-artist {
-                font-size: 16px !important;
-            }
-
-            .event-title {
-                font-size: 14px !important;
-            }
-
-            /* Calendar container adjustments */
-            .event-calendar {
-                margin: 15px 0;
-                padding: 0 10px;
-                overflow-x: auto;
-            }
-        }
-
-        @media screen and (max-width: 480px) {
-            /* Extra small screens */
-            h1 img {
-                width: 95vw !important;
-                max-width: 250px !important;
-            }
-
-            .calendar-table {
-                font-size: 9px;
-                width: 90%;
-            }
-
-            .calendar-table th,
-            .calendar-table td {
-                padding: 3px 4px;
-                font-size: 9px;
-            }
-
-            #chatBubble {
-                width: 150px;
-                right: 90px;
-                font-size: 9px;
-            }
-
-            #mascot {
-                width: 80px;
-            }
-
-            h1 {
-                font-size: 24px !important;
-            }
-
-            .event-time {
-                font-size: 16px !important;
-            }
-
-            .event-artist {
-                font-size: 14px !important;
-            }
-
-            .event-title {
-                font-size: 12px !important;
-            }
-
-            /* More aggressive padding for very small screens */
-            .event-calendar {
-                padding: 0 5px;
-            }
-
-            #passwordForm {
-                padding: 20px 15px;
-            }
-        }
-        
-        /* Live Chat Styles */
-        #chatContainer {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            height: 250px;
-            background: transparent;
-            border: none;
-            font-family: 'MS Sans Serif', sans-serif;
-            font-size: 11px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            pointer-events: none;
-        }
-
-        #chatContainer.show {
-            display: flex;
-        }
-
-        #chatHeader {
-            display: none;
-        }
-
-        #chatToggle {
-            display: none;
-        }
-
-        #chatClose {
-            display: none;
-        }
-
-        #chatMessages {
-            flex: 1;
-            background: transparent;
-            border: none;
-            margin: 0;
-            padding: 4px;
-            overflow-y: auto;
-            font-size: 11px;
-            line-height: 1.3;
-            pointer-events: none;
-            max-height: 200px;
-            min-height: 200px;
-        }
-
-        #chatInputContainer {
-            padding: 0;
-            background: transparent;
-            border: none;
-            display: flex;
-            gap: 4px;
-            pointer-events: auto;
-            margin-top: 4px;
-        }
-
-        #chatInput {
-            flex: 1;
-            border: none;
-            padding: 4px 6px;
-            font-family: 'MS Sans Serif', sans-serif;
-            font-size: 11px;
-            background: rgba(0, 0, 0, 0.3);
-            color: white;
-            border-radius: 2px;
-            outline: none;
-        }
-
-        #chatInput::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        #chatSend {
-            background: rgba(0, 0, 0, 0.4);
-            border: none;
-            padding: 4px 8px;
-            font-family: 'MS Sans Serif', sans-serif;
-            font-size: 11px;
-            cursor: pointer;
-            color: white;
-            border-radius: 2px;
-        }
-
-        #chatSend:hover {
-            background: rgba(0, 0, 0, 0.6);
-        }
-
-        #chatSend:active {
-            background: rgba(0, 0, 0, 0.8);
-        }
-
-        .chat-message {
-            margin: 1px 0;
-            word-wrap: break-word;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-            color: white;
-            pointer-events: none;
-            font-size: 10px;
-            line-height: 1.2;
-        }
-
-        .chat-username {
-            font-weight: bold;
-            margin-right: 4px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-        }
-
-        .chat-timestamp {
-            font-size: 8px;
-            color: #ccc;
-            margin-left: 4px;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-        }
-
-        .chat-system {
-            color: #ffff88;
-            font-style: italic;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-        }
-
-        /* Chat input focus indicator */
-        #chatInput:focus {
-            background: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
-        }
-
-        /* Chat reminder when not focused */
-        .chat-reminder {
-            position: fixed;
-            bottom: 30px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #ffff88;
-            padding: 4px 8px;
-            border-radius: 2px;
-            font-size: 10px;
-            font-family: 'MS Sans Serif', sans-serif;
-            z-index: 999;
-            display: none;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-            pointer-events: none;
-            opacity: 0.8;
-        }
-
-        /* Chat typing indicator */
-        .chat-typing {
-            display: none;
-        }
-
-        /* Mobile responsive chat */
-        @media screen and (max-width: 768px) {
-            #chatContainer {
-                width: calc(100vw - 40px);
-                height: 200px;
-                bottom: 10px;
-                right: 10px;
-                left: 10px;
-            }
-            
-            .chat-reminder {
-                bottom: 20px;
-                right: 10px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="./index.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- add meta description -->
     <meta name="description" content="The Tandy Cube live virtual performance venue">
@@ -898,7 +16,7 @@
     <meta name="bingbot" content="index, follow">
     <meta name="yandexbot" content="index, follow">
     <!-- add social preview image -->
-    <meta property="og:image" content="https://cube.pcotandy.org/tandycubetrans2.png">
+    <meta property="og:image" content="https://cube.pcotandy.org/tandycube3.png">
     <meta property="og:title" content="The Tandy Cube">
     <meta property="og:description" content="The Tandy Cube live virtual performance venue">
     <meta property="og:url" content="https://cube.pcotandy.org">
@@ -920,91 +38,173 @@
     <meta property="og:image:type" content="image/png">
 
     <!-- icon -->
-    <link rel="icon" href="./tandycubetrans2.png">
+    <link rel="icon" href="./assets/tandycubetrans2.webp">
     
     
 </head>
 <body>
     <div id="playOverlay">
-        <!-- <img src="./myst.png" id="myst" alt="Myst"> -->
-        <div id="overlayLeft"></div>
-        <div id="overlayRight"></div>
-        <div id="passwordForm">
-            <!-- <img width="120" style="margin-top: -10px;" id="cubeStage" width="" src="./cubestage3.png" alt="Cube Stage"> -->
+        <!-- Character Selection Screen - positioned behind welcome screen -->
+        <div id="characterSelection">
+            <div id="characterOverlayLeft"></div>
+            <div id="characterOverlayRight"></div>
             
-            <!-- Old-school text marquee effect -->
-            <!-- <marquee behavior="alternate" scrollamount="3">
-                <font color="#ffff00">★</font> Live <font color="#ffff00">★</font>
-            </marquee> -->
-            
-            <h1 style="margin-top: 0;">
-                <img src="./tandycubetrans2.png" style="width: 400px; height: auto;">
-            </h1>
-            
-            <div class="event-status">
-                <!-- <div class="status-badge">
-                    <span class="live-indicator"><span class="live-dot no-animation"></span> STREAMING NOW</span>
-                </div> -->
-                <!-- <div class="event-time">            <img width="20" style="margin-top: -10px;" id="cubeStage" width="" src="https://webring.pcotandy.org/Assets/TandyLogo.png" alt="Cube Stage">
-                    Concert in progress             <img width="20" style="margin-top: -10px;" id="cubeStage" width="" src="https://webring.pcotandy.org/Assets/TandyLogo.png" alt="Cube Stage">
-                </div> -->
-            </div>
-            
-            <div class="current-event">
-                <div class="live-indicator">
-                    <span class="live-dot no-animation"></span>
-                    <span>LIVE</span>
+            <div id="characterForm">
+                <h1 style="margin: 0;">
+                    <img src="./assets/identity.webp">
+                </h1>
+                
+                <div class="character-form">
+                    <!-- <h2>Choose Your Identity</h2> -->
+                    
+                    <div class="username-section">
+                        <input type="text" id="usernameInput" placeholder="Enter username..." maxlength="20" autocomplete="off">
+                    </div>
+                    
+                    <div class="orb-selection">
+                        <h3>Select Your Orb Color:</h3>
+                        <div class="orb-colors">
+                            <div class="orb-option" data-color="#ff4444">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ff8888, #ff4444, #cc2222);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orb-option" data-color="#44ff44">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #88ff88, #44ff44, #22cc22);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orb-option" data-color="#4444ff">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #8888ff, #4444ff, #2222cc);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orb-option" data-color="#ffff44">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ffff88, #ffff44, #cccc22);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orb-option" data-color="#ff44ff">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ff88ff, #ff44ff, #cc22cc);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orb-option" data-color="#44ffff">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #88ffff, #44ffff, #22cccc);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orb-option" data-color="#ff8844">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #ffaa66, #ff8844, #cc5522);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orb-option" data-color="#8844ff">
+                                <div class="orb-cube-container">
+                                    <div class="orb-cube">
+                                        <div class="orb-cube-face orb-front" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
+                                        <div class="orb-cube-face orb-back" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
+                                        <div class="orb-cube-face orb-right" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
+                                        <div class="orb-cube-face orb-left" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
+                                        <div class="orb-cube-face orb-top" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
+                                        <div class="orb-cube-face orb-bottom" style="background: radial-gradient(circle at 30% 30%, #aa66ff, #8844ff, #5522cc);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="joinButton" disabled>Join Websocket</button>
+                    <div id="characterMessage"></div>
                 </div>
-                <div class="event-artist">Katarina Mazur</div>
-                <div class="event-title"><i>A Dance Performance</i></div>
             </div>
+        </div>
+        
+        <!-- Welcome screen - positioned in front -->
+        <div id="welcomeScreen">
+            <div id="overlayRight"></div>
+            <div id="overlayLeft"></div>
             
-            <!-- 3D Spinning Cube Alternative (commented out for future use)
-            <div class="performer-cube-container">
-                <div class="performer-cube">
-                    <div class="cube-face front">
-                        <div class="cube-artist">Kat Mazur</div>
-                        <div class="cube-title">Dancing to: <i>Cut on a Can</i></div>
+            <!-- Initial welcome screen -->
+            <div id="passwordForm">
+                <h1 style="margin-top: 0;">
+                    <img src="./assets/tandycubetrans2.webp" style="width: 400px; height: auto;">
+                </h1>
+                
+                <div class="event-status">
+                </div>
+                
+                <div class="current-event">
+                    <div class="live-indicator">
+                        <span class="live-dot no-animation"></span>
+                        <span>LIVE</span>
                     </div>
-                    <div class="cube-face back">
-                        <div class="cube-artist">Kat Mazur</div>
-                        <div class="cube-title">Dancing to: <i>Cut on a Can</i></div>
-                    </div>
-                    <div class="cube-face right">
-                        <div class="cube-artist">Kat Mazur</div>
-                        <div class="cube-title">Dancing to: <i>Cut on a Can</i></div>
-                    </div>
-                    <div class="cube-face left">
-                        <div class="cube-artist">Kat Mazur</div>
-                        <div class="cube-title">Dancing to: <i>Cut on a Can</i></div>
-                    </div>
-                    <div class="cube-face top">
-                        <div class="cube-artist">Kat Mazur</div>
-                        <div class="cube-title">Dancing to: <i>Cut on a Can</i></div>
-                    </div>
-                    <div class="cube-face bottom">
-                        <div class="cube-artist">Kat Mazur</div>
-                        <div class="cube-title">Dancing to: <i>Cut on a Can</i></div>
+                    <div class="event-artist">Katarina Mazur</div>
+                    <div class="event-title"><i>A Dance Performance</i></div>
+                </div>
+                
+                <button id="enterButton">Enter</button>
+                <div class="old-hr"></div>
+                <br>
+                <div class="event-calendar">
+                    <div id="calendar-content">
+                        <div class="calendar-title">Loading transmissions...</div>
                     </div>
                 </div>
-            </div>
-            -->
-            
-            <button id="enterButton">Enter</button>
-            <div class="old-hr"></div>
-            <br>
-            <div class="event-calendar">
-                <div id="calendar-content">
-                    <div class="calendar-title">Loading transmissions...</div>
-                </div>
-            </div>
 
-<br>
-            
+                <br>
 
- 
-            
-            <div id="passwordMessage"></div>
+                <div id="passwordMessage"></div>
+            </div>
         </div>
     </div>
     <canvas id="glCanvas"></canvas>
@@ -1019,8 +219,41 @@
         <div id="cameraMode" style="font-size: 12px; opacity: 0.7;">📱 Mobile Camera</div>
     </div>
     
+    <!-- Camera Presets Guide -->
+    <div id="presetGuide" style="
+        position: fixed;
+        top: 80px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 10px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 11px;
+        z-index: 999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        max-width: 200px;
+    ">
+        <div style="font-weight: bold; margin-bottom: 5px;">📹 Camera Presets</div>
+        <div>1 - Front Center</div>
+        <div>2 - Front Right</div>
+        <div>3 - Front Left</div>
+        <div>4 - Side Right</div>
+        <div>5 - Side Left</div>
+        <div>6 - Back Right</div>
+        <div>7 - Back Left</div>
+        <div>8 - Back Center</div>
+        <div>9 - High Angle</div>
+        <div>0 - Low Angle</div>
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #555; font-size: 10px;">
+            <div><strong>G</strong> - Log Position</div>
+        </div>
+    </div>
+    
     <!-- Mascot and chat bubble -->
-    <img id="mascot" src="./blueby6.png" alt="Mascot">
+    <img id="mascot" src="./assets/blueby6.png" alt="Mascot">
     <div id="chatBubble">
         <div class="chat-header">Instant Message - Blueby</div>
         <div class="chat-content">
@@ -1028,541 +261,293 @@
             Use <strong>WASD</strong> to move around<br>
             <strong>Space/Shift</strong> for up/down<br>
             Press <strong>C</strong> to cycle camera modes<br>
-            Press <strong>L</strong> for look-at stage mode<br>
-            Press <strong>F</strong> for smooth film mode (recording)
+            Press <strong>P</strong> for presets, <strong>G</strong> to log position<br>
+            Press <strong>/</strong> to open chat<br>
         </div>
+        <button id="gotItButton" class="got-it-button">Got it!</button>
+        <img src="./assets/bluebyneck2.webp" alt="Blueby neck" class="chat-bubble-image">
     </div>
     
     <!-- Live Chat Interface -->
     <div id="chatContainer">
         <div id="chatMessages"></div>
         <div id="chatInputContainer">
-            <input type="text" id="chatInput" placeholder="Type a message..." maxlength="200">
+            <input type="text" id="chatInput" placeholder="Press / to chat" maxlength="200">
             <button id="chatSend">Send</button>
         </div>
     </div>
     
-    <!-- Chat reminder -->
-    <div class="chat-reminder" id="chatReminder">Press / to chat</div>
-    
     <!-- Chat typing indicator -->
     <div class="chat-typing" id="chatTyping">Press / to open chat</div>
     
-    <img id="displacementMap" src="./displace.png" 
+    <img id="displacementMap" src="./assets/displace.png" 
          style="display: none;" crossorigin="anonymous">
          <video id="videoTexture" style="display: none;" playsinline muted autoplay webkit-playsinline crossorigin="anonymous">
             <!-- HLS stream will be loaded via JavaScript -->
          </video>
-    <script id="vertexShader" type="x-shader/x-vertex">
-        precision mediump float;
-        attribute vec4 aVertexPosition;
-        varying vec2 vTextureCoord;
-        
-        void main() {
-            vTextureCoord = (aVertexPosition.xy + 1.0) / 2.0;
-            gl_Position = aVertexPosition;
-        }
-    </script>
-    <script id="fragmentShader" type="x-shader/x-fragment">
-        precision highp float;
-        
-        uniform vec2 iResolution;
-        uniform float iTime;
-        uniform vec2 iMouse;
-        uniform sampler2D iChannel0;
-        uniform sampler2D iChannel1;
-        uniform vec3 uOrbPositions[6];  // Reduced from 10 to match MAX_ORBS
-        uniform vec3 uOrbColors[6];     // Color for each orb
-        uniform int uOrbCount;           // Current number of active orbs
-        uniform float uOrbRadii[6];     // Pre-calculated dynamic radii for each orb
-        uniform sampler2D uTextTexture;  // Single text texture (we'll use texture atlas later)
-        uniform vec3 uTextPositions[6]; // Positions for text billboards
-        uniform int uTextCount;          // Number of active text billboards
-        uniform vec3 uCameraPos;         // Camera position
-        uniform vec2 uCameraRot;         // Camera rotation (pitch, yaw)
-        uniform bool uUsePolarCamera;    // Whether to use polar camera mode
-        uniform vec2 uPolarRotation;     // Polar camera rotation (pitch, yaw)
-        varying vec2 vTextureCoord;
-
-        #define EPSILON .0001
-        #define MAX_VIEW_STEPS 500
-        #define MAX_SHADOW_STEPS 32
-        #define OCCLUSION_SAMPLES 4.0
-        #define OCCLUSION_FACTOR .5
-        #define MAX_DEPTH 50.0
-        #define BUMP_FACTOR .03
-        #define TEX_SCALE_FACTOR .4
-        #define ORB_RADIUS 0.1
-        #define TEXT_BILLBOARD_SIZE vec2(0.1, 0.03) // Smaller billboards - width and height
-
-        #define BOX_POS vec3(0.0, 0.0, 0.0)
-        #define BOX_DIM vec3(1.0, 1.0, 1.0)
-        #define LIGHT_COLOR vec4(1.0)
-        #define PEN_FACTOR 50.0
-        #define MAT_COLOR vec4(1.0)
-        #define MAT_GLOSS 1.0
-        #define PLANE_SIZE vec2(.5 * (16./9.), .5)
-        #define PLANE_CENTER vec3(0.0, 1.12, 0.0)
-
-        // Chroma key function - returns true if color should be keyed out (transparent)
-        bool isChromaKey(vec3 color, vec3 keyColor, float threshold) {
-            float distance = length(color - keyColor);
-            return distance < threshold;
-        }
-
-        // Chroma key with black as the key color
-        bool isBlackChromaKey(vec3 color) {
-            float threshold = 0.5; // Adjust this value to control sensitivity
-            return isChromaKey(color, vec3(0.0, 0.0, 0.0), threshold);
-        }
-
-        // Safe texture sampling function that prevents edge stretching
-        vec4 safeTextureSample(sampler2D tex, vec2 uv) {
-            // Check if UV is outside the valid 0-1 range
-            if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-                return vec4(0.0, 0.0, 0.0, 0.0); // Return transparent black for out-of-bounds samples
-            }
-            return texture2D(tex, uv);
-        }
-
-        struct Light {
-            vec3 position;
-            vec4 color;
-            float brightness;
-            float penumbraFactor;
-        };
-
-        struct Material {
-            vec4 color;
-            float gloss;
-        };
-
-        float distSphere(vec3 p, vec3 center, float radius) {
-            return length(p - center) - radius;
-        }
-
-        vec4 tex3D(in vec3 p, in vec3 n, sampler2D tex) {
-            vec4 x = texture2D(tex, p.yz);
-            vec4 y = texture2D(tex, p.xz);
-            vec4 z = texture2D(tex, p.xy);
-            return x * abs(n.x) + y * abs(n.y) + z * abs(n.z);
-        }
-
-        float sdBoxFrame( vec3 p, vec3 b, float e )
-{
-       p = abs(p  )-b;
-  vec3 q = abs(p+e)-e;
-  return min(min(
-      length(max(vec3(p.x,q.y,q.z),0.0))+min(max(p.x,max(q.y,q.z)),0.0),
-      length(max(vec3(q.x,p.y,q.z),0.0))+min(max(q.x,max(p.y,q.z)),0.0)),
-      length(max(vec3(q.x,q.y,p.z),0.0))+min(max(q.x,max(q.y,p.z)),0.0));
-}
-
-float distVideoPlane(vec3 p) {
-    // Plane facing camera, centered at (0, 0, 0), size 2x2 in X and Y, lying at Z = 0.5
-    // Adjust position/size as needed
-    vec3 center = PLANE_CENTER;
-    vec2 planeSize = PLANE_SIZE; // half extents
-    vec3 local = p - center;
-
-    // Create a sharp boundary exactly at the plane edges
-    // Return a large distance if outside bounds
-    if (abs(local.x) > planeSize.x || abs(local.y) > planeSize.y) {
-        return 100.0; // Large distance to prevent rendering outside plane bounds
-    }
-
-    return abs(local.z); // distance to z-plane
-}
-
-        float distTextBillboard(vec3 p, vec3 center, vec3 cameraPos, int orbIndex) {
-            // Early distance check - if we're far from the billboard center, skip expensive calculations
-            float roughDist = length(p - center);
-            if (roughDist > 0.5) return roughDist; // Return actual distance, no offset
-            
-            // Calculate billboard orientation (always face camera)
-            vec3 toCam = normalize(cameraPos - center);
-            vec3 up = vec3(0.0, 1.0, 0.0);
-            vec3 right = normalize(cross(up, toCam));
-            up = cross(toCam, right);
-            
-            // Transform point to billboard local space
-            vec3 local = p - center;
-            vec2 localPos = vec2(dot(local, right), dot(local, up));
-            
-            // Check if within billboard bounds
-            if (abs(localPos.x) > TEXT_BILLBOARD_SIZE.x || abs(localPos.y) > TEXT_BILLBOARD_SIZE.y) {
-                return length(local); // Return actual distance, no offset
-            }
-            
-            // Simply return distance to billboard plane - no texture sampling for performance
-            return abs(dot(local, toCam));
-        }
-
-        float distBox(vec3 samplePos, vec3 boxPos, vec3 boxDim) {    
-            vec3 normal = normalize(samplePos - boxPos);
-            float bump = 0.0;
-            
-            if(length(samplePos-boxPos) < length(boxDim)) {
-                vec4 tex = tex3D(samplePos * TEX_SCALE_FACTOR, normal, iChannel0);
-                bump = tex.x * BUMP_FACTOR;  // Using .x instead of .r
-            }
-            
-            vec3 d = abs(samplePos-boxPos) - boxDim;
-            return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0)) + bump;
-        }
-        float sdBox(vec3 samplePos, vec3 boxPos, vec3 boxDim) {    
-            vec3 normal = normalize(samplePos - boxPos);
-            float bump = 0.0;
-            
-            
-            vec3 d = abs(samplePos-boxPos) - boxDim;
-            return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
-        }
-        
-
-        float sdPlane( vec3 p, vec3 n, float h )
-{
-  // n must be normalized
-  return dot(p,n) + h;
-}
-
-float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
-    float d = min(distBox(samplePos, BOX_POS, BOX_DIM), 
-    distBox(samplePos, vec3(0.0, -5.0, 0.0), vec3(4.0, 4.0, 4.0)));
-
-    // Optimized orb checking with early exit
-    float minOrbDist = 1000.0;
-    for (int i = 0; i < 6; i++) {
-        if (i >= uOrbCount) break;
-        float orbDist = distSphere(samplePos, uOrbPositions[i], uOrbRadii[i]);
-        minOrbDist = min(minOrbDist, orbDist);
-        // Early exit if we're very close to an orb
-        if (orbDist < 0.01) break;
-    }
-    d = min(d, minOrbDist);
-
-    // Only check text billboards if we're close to orbs
-    if (minOrbDist < 1.0) {
-        for (int i = 0; i < 6; i++) {
-            if (i >= uTextCount) break;
-            d = min(d, distTextBillboard(samplePos, uTextPositions[i], cameraPos, i));
-        }
-    }
-
-    // Add video plane
-    if (!skipVideoPlane) {
-        float dVideo = distVideoPlane(samplePos);
-        d = min(d, dVideo);
-    }
-
-    return d;
-}
-
-        void camFreefly(out vec3 pos, out vec3 dir, in vec3 cameraPos, in vec2 rotation, in vec2 fragCoord) {
-            pos = cameraPos;
-            
-            // Calculate screen coordinates
-            vec2 uv = (fragCoord.xy - iResolution.xy * 0.5) / iResolution.y;
-            
-            // Create view ray in camera space (looking down -Z)
-            vec3 rayDir = normalize(vec3(uv.x, uv.y, -1.0));
-            
-            // Build rotation matrix from yaw and pitch
-            float yaw = rotation.y;
-            float pitch = rotation.x;
-            
-            // Rotation matrix for yaw (Y axis)
-            mat3 yawMatrix = mat3(
-                cos(yaw), 0.0, sin(yaw),
-                0.0, 1.0, 0.0,
-                -sin(yaw), 0.0, cos(yaw)
-            );
-            
-            // Rotation matrix for pitch (X axis)
-            mat3 pitchMatrix = mat3(
-                1.0, 0.0, 0.0,
-                0.0, cos(pitch), -sin(pitch),
-                0.0, sin(pitch), cos(pitch)
-            );
-            
-            // Apply rotations: first pitch, then yaw
-            dir = yawMatrix * pitchMatrix * rayDir;
-        }
-
-        void camPolar(out vec3 pos, out vec3 dir, in vec3 origin, in vec2 rotation, in float dist, in float zoom, in vec2 fragCoord) {
-            vec2 c = cos(rotation);
-            vec4 s;
-            s.xy = sin(rotation);
-            s.zw = -s.xy;
-            
-            dir.xy = fragCoord.xy - iResolution.xy*.5;
-            dir.z = iResolution.y*zoom;
-            dir = normalize(dir);
-            
-            dir.yz = dir.yz*c.x + dir.zy*s.zx;
-            dir.xz = dir.xz*c.y + dir.zx*s.yw;
-            
-            pos = origin - dist*vec3(c.x*s.y,s.z,c.x*c.y);
-        }
-
-        void marchThroughField(inout vec3 pos, vec3 dir, vec3 eye, bool skipVideoPlane) {
-            float dist;
-            for(int i = 0; i < MAX_VIEW_STEPS; i++) {
-                dist = getDist(pos, skipVideoPlane, eye);
-                if(dist < EPSILON || length(pos-eye) > MAX_DEPTH-EPSILON)            
-                    return;
-                pos += dir * dist;
-            }
-        }
-
-        vec3 getNormal(vec3 pos) {
-            float d = getDist(pos, false, vec3(0.0));
-            return normalize(vec3(
-                getDist(pos+vec3(EPSILON,0,0), false, vec3(0.0))-d,
-                getDist(pos+vec3(0,EPSILON,0), false, vec3(0.0))-d,
-                getDist(pos+vec3(0,0,EPSILON), false, vec3(0.0))-d
-            ));
-        }
-
-        float calcOcclusion(vec3 pos, vec3 surfaceNormal) {
-            float result = 0.0;
-            vec3 normalPos = vec3(pos);
-            for(float i = 0.0; i < OCCLUSION_SAMPLES; i+=1.0) {
-                normalPos += surfaceNormal * (1.0/OCCLUSION_SAMPLES);
-                result += (1.0/exp2(i)) * (i/OCCLUSION_SAMPLES)-getDist(normalPos, false, vec3(0.0));
-            }
-            return 1.0-(OCCLUSION_FACTOR*result);
-        }
-
-        float calcShadow(vec3 origin, vec3 lightDir, Light light) {
-            float dist;
-            float result = 1.0;
-            float lightDist = length(light.position - origin);
-            
-            vec3 pos = origin + lightDir * (EPSILON * 15.0 + BUMP_FACTOR);
-        
-            for (int i = 0; i < MAX_SHADOW_STEPS; i++) {
-                // Check regular geometry (excluding video plane and text billboards)
-                dist = getDist(pos, true, vec3(0.0));
-                
-                // Manually check only non-text geometry for shadows
-                float d = min(distBox(pos, BOX_POS, BOX_DIM), 
-                distBox(pos, vec3(0.0, -5.0, 0.0), vec3(4.0, 4.0, 4.0)));
-                
-                // Optimized orb checking for shadows with early exit
-                for (int j = 0; j < 6; j++) {
-                    if (j >= uOrbCount) break;
-                    float orbDist = distSphere(pos, uOrbPositions[j], uOrbRadii[j]);
-                    d = min(d, orbDist);
-                    // Early exit if we hit an orb
-                    if (orbDist < EPSILON) {
-                        return 0.0;
-                    }
-                }
-                
-                dist = d;
-        
-                // Check video plane (simplified)
-                vec3 center = PLANE_CENTER;
-                vec2 planeSize = PLANE_SIZE;
-                vec3 local = pos - center;
-        
-                // Ray-plane intersection (plane at Z = center.z)
-                if (abs(lightDir.z) > 0.0001) {  // avoid division by 0
-                    float tPlane = (center.z - origin.z) / lightDir.z;
-                
-                    if (tPlane > 0.0 && tPlane < lightDist) {
-                        vec3 hitPos = origin + tPlane * lightDir;
-                        vec3 local = hitPos - center;
-                
-                        if (abs(local.x) <= planeSize.x && abs(local.y) <= planeSize.y) {
-                            vec2 uv = local.xy / planeSize + 0.5;
-                            uv.y = 1.0 - uv.y;
-                            vec4 tex = safeTextureSample(iChannel1, uv);
-                
-                            if (!isBlackChromaKey(tex.rgb)) {
-                                return 0.0; // opaque part of the video plane blocks light
-                            }
-                        }
-                    }
-                }
-        
-                if (dist < EPSILON) {
-                    return 0.0; // Hit solid geometry
-                }
-        
-                if (length(pos - origin) > lightDist || length(pos - origin) > MAX_DEPTH) {
-                    return result;
-                }
-        
-                pos += lightDir * dist;
-        
-                if (length(pos - origin) < lightDist) {
-                    result = min(result, light.penumbraFactor * dist / length(pos - origin));
-                }
-            }
-            return result;
-        }
-        
-
-        vec4 calcLighting(vec3 samplePos, vec3 eye, Light light, Material material) {
-            float lightDist = length(light.position-samplePos);
-            vec3 lightDir = normalize(light.position-samplePos);
-            vec3 eyeDir = normalize(samplePos-eye);
-            vec3 surfaceNormal = getNormal(samplePos);
-            vec3 reflection = normalize(reflect(eyeDir, surfaceNormal));
-            
-            float specular = pow(max(0.0, dot(lightDir, reflection)), 72.0);
-            float diffuse = max(0.0, dot(lightDir, surfaceNormal));
-            float ambient = .05;
-            
-            float attenuation = min(1.0, 1.0/(lightDist/light.brightness));
-            float shadow = calcShadow(samplePos, lightDir, light);
-            float occlusion = calcOcclusion(samplePos, surfaceNormal);
-            
-            // Check if we're on an orb surface
-            vec4 finalColor = material.color;
-            for(int i = 0; i < 6; i++) {
-                if(i >= uOrbCount) break;
-                if(length(samplePos - uOrbPositions[i]) < uOrbRadii[i] + EPSILON) {
-                    finalColor = vec4(uOrbColors[i], 1.0);
-                    break;
-                }
-            }
-            
-            return light.color * finalColor * clamp(((specular+diffuse)*shadow*attenuation)+(ambient*occlusion), 0.0, 1.0);
-        }
-
-        vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
-            if (length(pos - eye) > MAX_DEPTH - EPSILON) return vec4(0.0);
-
-            // Check if this point is on a text billboard
-            for (int i = 0; i < 6; i++) {
-                if (i >= uTextCount) break;
-                
-                vec3 center = uTextPositions[i];
-                vec3 toCam = normalize(eye - center);
-                vec3 up = vec3(0.0, 1.0, 0.0);
-                vec3 right = normalize(cross(up, toCam));
-                up = cross(toCam, right);
-                
-                vec3 local = pos - center;
-                vec2 localPos = vec2(dot(local, right), dot(local, up));
-                
-                if (abs(localPos.x) <= TEXT_BILLBOARD_SIZE.x && 
-                    abs(localPos.y) <= TEXT_BILLBOARD_SIZE.y &&
-                    abs(dot(local, toCam)) < EPSILON) {
-                    
-                    // Calculate UV coordinates for the text texture atlas
-                    vec2 uv = (localPos / TEXT_BILLBOARD_SIZE) * 0.5 + 0.5;
-                    uv.y = 1.0 - uv.y; // Flip Y coordinate
-                    
-                    // Adjust UV for texture atlas - each orb gets a horizontal strip
-                    float orbIndex = float(i);
-                    float totalOrbs = float(uTextCount);
-                    uv.y = (uv.y + orbIndex) / totalOrbs; // Map to correct strip in atlas
-                    
-                    // Sample the text texture atlas
-                    vec4 textColor = texture2D(uTextTexture, uv);
-                    
-                    // Return the full texture color (black background + white text)
-                    return textColor;
-                }
-            }
-
-            // Determine if this point is on the video plane
-            vec3 center = PLANE_CENTER;
-            vec2 planeSize = PLANE_SIZE;
-            vec3 local = pos - center;
-        
-            if (abs(local.z) < EPSILON &&
-            abs(local.x) <= planeSize.x &&
-            abs(local.y) <= planeSize.y) {
-        
-                vec2 uv = local.xy / planeSize + 0.5;
-                uv.y = 1.0 - uv.y;
-        
-                vec4 tex = safeTextureSample(iChannel1, uv);
-                
-                // Check if this pixel should be keyed out (transparent)
-                if (isBlackChromaKey(tex.rgb)) {
-                    // Pixel is transparent, raymarch through to background
-                    vec3 deepPos = pos;
-                    marchThroughField(deepPos, dir, eye, true);
-                    
-                    // Only render background if something was hit
-                    if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
-                        return calcLighting(deepPos, eye, light, material);
-                    }
-                    
-                    // If nothing hit behind, return black/transparent
-                    return vec4(0.0, 0.0, 0.0, 0.0);
-                }
-                
-                // Calculate lighting for both front and back of the video plane
-                float lightDist = length(light.position - pos);
-                vec3 lightDir = normalize(light.position - pos);
-                vec3 eyeDir = normalize(pos - eye);
-                
-                // Calculate lighting for front face
-                vec3 frontNormal = vec3(0.0, 0.0, 1.0);
-                vec3 frontReflection = normalize(reflect(eyeDir, frontNormal));
-                float frontSpecular = pow(max(0.0, dot(lightDir, frontReflection)), 72.0);
-                float frontDiffuse = max(0.0, dot(lightDir, frontNormal));
-                
-                // Calculate lighting for back face
-                vec3 backNormal = vec3(0.0, 0.0, -1.0);
-                vec3 backReflection = normalize(reflect(eyeDir, backNormal));
-                float backSpecular = pow(max(0.0, dot(lightDir, backReflection)), 72.0);
-                float backDiffuse = max(0.0, dot(lightDir, backNormal));
-                
-                // Use the stronger of front or back lighting
-                float specular = max(frontSpecular, backSpecular);
-                float diffuse = max(frontDiffuse, backDiffuse);
-                float ambient = 0.3; // Increased from 0.05 to maintain higher minimum brightness
-                
-                float attenuation = min(1.0, 1.0/(lightDist/light.brightness));
-                float shadow = calcShadow(pos, lightDir, light);
-                float occlusion = calcOcclusion(pos, frontNormal); // Using front normal for occlusion
-                
-                // Apply lighting to the video texture with higher minimum brightness
-                vec4 litColor = light.color * tex * clamp(((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion), 0.4, 1.0);
-                
-                return litColor;
-            }
-        
-            return calcLighting(pos, eye, light, material);
-        }
-
-        void main() {
-            vec2 fragCoord = gl_FragCoord.xy;
-            vec3 pos, dir, eye;
-            
-            if (uUsePolarCamera) {
-                camPolar(pos, dir, vec3(0.0), uPolarRotation, 5.0, 1.0, fragCoord);
-            } else {
-                camFreefly(pos, dir, uCameraPos, uCameraRot, fragCoord);
-            }
-            eye = vec3(pos);
-            
-            Light light = Light(
-                vec3(3.0*sin(iTime+1.3), 3.5, 3.0*cos(iTime+1.3)),
-                LIGHT_COLOR,
-                3.0,
-                PEN_FACTOR
-            );
-            Material mat = Material(MAT_COLOR, MAT_GLOSS);
-            
-            marchThroughField(pos, dir, eye, false);
-            
-            gl_FragColor = shade(pos, dir, eye, light, mat);
-        }
-    </script>
     <script>
+        // Configuration Management
+        let currentConfig = null;
+        let currentVideoUrl = null;
+
+        // Load configuration from server
+        async function loadConfiguration() {
+            try {
+                console.log('Loading configuration from server...');
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                
+                console.log('Configuration loaded:', config);
+                currentConfig = config;
+                
+                // Apply configuration immediately
+                applyConfiguration(config);
+                
+                return config;
+            } catch (error) {
+                console.error('Failed to load configuration, using defaults:', error);
+                // Fall back to hardcoded defaults
+                currentConfig = getDefaultClientConfig();
+                applyConfiguration(currentConfig);
+                return currentConfig;
+            }
+        }
+
+        function getDefaultClientConfig() {
+            return {
+                video: {
+                    m3u8Url: "https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8",
+                    chromaKey: {
+                        enabled: true,
+                        color: [0.0, 1.0, 0.0], // Green
+                        threshold: 0.3,
+                        featherEdge: 0.1
+                    }
+                }
+            };
+        }
+
+        function applyConfiguration(config) {
+            console.log('Applying configuration:', config);
+            
+            // If we have a current config and this is a partial update, merge them
+            if (currentConfig && config) {
+                // Deep merge the configurations
+                const mergedConfig = JSON.parse(JSON.stringify(currentConfig)); // Deep clone current config
+                
+                // Merge video settings if present
+                if (config.video) {
+                    if (!mergedConfig.video) mergedConfig.video = {};
+                    Object.assign(mergedConfig.video, config.video);
+                }
+                
+                // Merge videoPlane settings if present
+                if (config.videoPlane) {
+                    mergedConfig.videoPlane = config.videoPlane;
+                }
+                
+                // Merge chromaKey settings if present
+                if (config.chromaKey) {
+                    mergedConfig.chromaKey = config.chromaKey;
+                }
+                
+                // Merge brightness if present
+                if (config.brightness !== undefined) {
+                    mergedConfig.brightness = config.brightness;
+                }
+                
+                console.log('🔄 Merged configuration:', mergedConfig);
+                config = mergedConfig;
+                currentConfig = mergedConfig; // Update current config
+            } else if (config) {
+                // This is a full config update
+                currentConfig = config;
+            }
+            
+            // Update video source if changed (only if video config is present)
+            if (config.video && config.video.m3u8Url !== currentVideoUrl) {
+                console.log('Video URL changed, updating source...');
+                updateVideoSource(config.video.m3u8Url);
+            }
+            
+            // Update shader uniforms if WebGL is initialized
+            if (gl && program) {
+                updateShaderUniforms(config);
+            }
+        }
+
+        function updateShaderUniforms(config) {
+            try {
+                console.log('🎨 Updating shader uniforms with config:', config);
+                
+                // Ensure we have a valid config
+                if (!config) {
+                    console.warn('⚠️ Invalid config provided to updateShaderUniforms');
+                    return;
+                }
+                
+                // Apply chroma key settings - check both locations for compatibility
+                const chromaKey = config.chromaKey || config.video?.chromaKey || {
+                    enabled: false,
+                    color: [0.0, 1.0, 0.0],
+                    threshold: 0.3
+                };
+
+                
+                console.log('🔍 Chroma key settings found:', chromaKey);
+                
+                // Ensure uniform locations are cached
+                if (!uniformLocations.uChromaKeyColor) {
+                    console.log('🔧 Chroma key uniforms not cached, caching now...');
+                    uniformLocations.uChromaKeyColor = gl.getUniformLocation(program, 'uChromaKeyColor');
+                    uniformLocations.uChromaThreshold = gl.getUniformLocation(program, 'uChromaThreshold');
+                    uniformLocations.uChromaEnabled = gl.getUniformLocation(program, 'uChromaEnabled');
+                }
+                
+                // Apply chroma key uniforms
+                if (uniformLocations.uChromaKeyColor) {
+                    gl.uniform3f(uniformLocations.uChromaKeyColor, ...chromaKey.color);
+                    console.log('✅ Applied chroma key color:', chromaKey.color);
+                }
+                
+                if (uniformLocations.uChromaThreshold) {
+                    gl.uniform1f(uniformLocations.uChromaThreshold, chromaKey.threshold);
+                    console.log('✅ Applied chroma key threshold:', chromaKey.threshold);
+                }
+                
+                if (uniformLocations.uChromaEnabled) {
+                    gl.uniform1i(uniformLocations.uChromaEnabled, chromaKey.enabled ? 1 : 0);
+                    console.log('✅ Applied chroma key enabled:', chromaKey.enabled);
+                }
+
+                const videoPlane = config.videoPlane || config.video?.videoPlane || {
+                    size: 0.5,
+                    position: [0.0, 1.12, 0.0]
+                };
+
+                console.log('🎥 Video plane config found:', videoPlane);
+                console.log('📏 Plane size:', videoPlane.size);
+                console.log('📍 Plane position:', videoPlane.position);
+
+                if (uniformLocations.uPlaneSize) {
+                    const sizeX = videoPlane.size * (16.0/9.0);
+                    const sizeY = videoPlane.size;
+                    gl.uniform2f(uniformLocations.uPlaneSize, sizeX, sizeY);
+                    gl.uniform3f(uniformLocations.uPlanePosition, videoPlane.position[0], videoPlane.position[1], videoPlane.position[2]);
+                    console.log('✅ Applied video plane size:', sizeX, 'x', sizeY);
+                    console.log('✅ Applied video plane position:', videoPlane.position);
+                } else {
+                    console.warn('⚠️ uPlaneSize uniform location not found');
+                }
+                
+                
+                // Apply brightness settings - check both locations for compatibility
+                const brightness = config.brightness || config.video?.brightness;
+                if (brightness !== undefined) {
+                    const brightnessLocation = gl.getUniformLocation(program, 'uBrightness');
+                    if (brightnessLocation) {
+                        gl.uniform1f(brightnessLocation, brightness);
+                        console.log('✅ Applied brightness:', brightness);
+                    }
+                }
+                
+                console.log('🎨 Shader uniforms updated successfully');
+            } catch (error) {
+                console.error('❌ Failed to update shader uniforms:', error);
+            }
+        }
+
+        function updateVideoSource(newUrl) {
+            if (newUrl === currentVideoUrl) {
+                console.log('🔄 Video source unchanged, skipping update:', newUrl);
+                return;
+            }
+            
+            console.log('🎬 Switching video source from', currentVideoUrl, 'to', newUrl);
+            
+            // Determine if this is an HLS stream or MP4
+            const isHLS = newUrl && (newUrl.includes('.m3u8') || newUrl.includes('playlist'));
+            const isMP4 = newUrl && newUrl.includes('.mp4');
+            
+            console.log('📋 URL Analysis:');
+            console.log('  - Is HLS stream:', isHLS);
+            console.log('  - Is MP4 file:', isMP4);
+            console.log('  - URL:', newUrl);
+            console.log('  - Previous was fallback:', isUsingFallback);
+            
+            currentVideoUrl = newUrl;
+            
+            // Update the global streamUrl variable
+            streamUrl = newUrl;
+            
+            // Store current playing state
+            const wasPlaying = !video.paused;
+            const currentTime = video.currentTime;
+            
+            console.log('📊 Current video state:');
+            console.log('  - Was playing:', wasPlaying);
+            console.log('  - Current time:', currentTime);
+            console.log('  - Video started:', videoStarted);
+            
+            // Reinitialize video with new URL
+            if (videoStarted) {
+                console.log('🔄 Reinitializing video with new URL...');
+                
+                // Clean up existing video first
+                cleanupHLS();
+                
+                // Reset video state flags - important for MP4 to HLS transitions
+                livestreamFailed = false;
+                isUsingFallback = false;
+                
+                // Clear any existing timeouts
+                if (window.livestreamTimeout) {
+                    clearTimeout(window.livestreamTimeout);
+                    window.livestreamTimeout = null;
+                    console.log('🕐 Cleared existing livestream timeout');
+                }
+                
+                // Initialize new video source based on type
+                if (isMP4) {
+                    console.log('🎥 Loading MP4 file directly...');
+                    loadMP4Fallback(newUrl); // Pass the new URL directly
+                } else if (isHLS) {
+                    console.log('📡 Initializing HLS stream...');
+                    // Ensure we're not in fallback mode when switching to HLS
+                    isUsingFallback = false;
+                    initializeLivestream(newUrl); // Pass the new URL directly
+                } else {
+                    console.warn('⚠️ Unknown video format, attempting HLS initialization...');
+                    isUsingFallback = false;
+                    initializeLivestream(newUrl); // Pass the new URL directly
+                }
+                
+                // If video was playing, ensure it continues playing after source change
+                if (wasPlaying) {
+                    console.log('▶️ Video was playing, ensuring autoplay continues...');
+                    
+                    // Add event listener to resume playback once new source is loaded
+                    const resumePlayback = () => {
+                        console.log('✅ New video source loaded, resuming playback...');
+                        video.play().catch(error => {
+                            console.warn('Failed to resume playback after source change:', error);
+                        });
+                        video.removeEventListener('loadedmetadata', resumePlayback);
+                        video.removeEventListener('canplay', resumePlayback);
+                    };
+                    
+                    video.addEventListener('loadedmetadata', resumePlayback);
+                    video.addEventListener('canplay', resumePlayback);
+                }
+            } else {
+                console.log('📺 Video not yet started, URL will be used on next initialization');
+            }
+        }
+
         // Video Configuration - Edit these to control video source behavior
         const USE_MP4_INSTEAD_OF_LIVESTREAM = false; // Set to true to bypass livestream and use MP4
-        const MP4_FALLBACK_URL = './kat.mp4'; // Path to your MP4 fallback file
-        const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before falling back to MP4
+        const MP4_FALLBACK_URL = './assets/kat.mp4'; // Path to your MP4 fallback file
+        const LIVESTREAM_TIMEOUT = 30000; // 30 seconds timeout for livestream before falling back to MP4 (increased from 10s)
         
         // Log current configuration
         console.log('=== VIDEO CONFIGURATION ===');
@@ -1629,6 +614,90 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         const FILM_DECELERATION = 0.75; // Changed from 0.85 for smoother deceleration
         const FILM_MAX_SPEED = 0.05;
 
+        // Camera presets for filming - positions that face the performer
+        const CAMERA_PRESETS = {
+            '1': { pos: [0.0, 1.5, 3.0], name: 'Front Center' },           // Front view, slightly elevated
+            '2': { pos: [-0.443, 1.135, 0.887], name: 'close left' },         // Front right angle
+            '3': { pos: [-0.748, 3.015, 1.067], name: 'up right' },          // Front left angle
+            '4': { pos: [-5.464, 3.717, 5.874], name: 'far away left' },           // Right side view
+            '5': { pos: [7.168, -0.029, 6.732], name: 'low far right' },           // Left side view
+            '6': { pos: [2.0, 1.3, -2.5], name: 'Back Right' },           // Back right angle
+            '7': { pos: [24.107, 10.527, 30.030], name: 'super far' },           // Back left angle
+            '8': { pos: [0.450, 0.998, -0.539], name: 'closeup' },          // Back view
+            '9': { pos: [0.0, 2.5, 1.5], name: 'High Angle' },            // High angle shot
+            '0': { pos: [0.427, 10.267, 0.417], name: 'above' }              // Low angle shot
+        };
+
+        function jumpToPreset(presetKey) {
+            const preset = CAMERA_PRESETS[presetKey];
+            if (!preset) return;
+            
+            console.log(`Jumping to camera preset ${presetKey}: ${preset.name}`);
+            
+            // Instantly set camera position
+            cameraPos[0] = preset.pos[0];
+            cameraPos[1] = preset.pos[1];
+            cameraPos[2] = preset.pos[2];
+            
+            // Calculate rotation to look at the performer (stage center)
+            calculateLookAtRotationToTarget(STAGE_TARGET);
+            
+            // Switch to free-fly mode for manual control after preset
+            cameraMode = 1;
+            usePolarCamera = false;
+            updateCameraModeIndicator();
+            
+            // Show preset info briefly
+            // showPresetInfo(preset.name);
+        }
+
+        function showPresetInfo(presetName) {
+            // Create or update preset info display
+            let presetInfo = document.getElementById('presetInfo');
+            if (!presetInfo) {
+                presetInfo = document.createElement('div');
+                presetInfo.id = 'presetInfo';
+                presetInfo.style.cssText = `
+                    position: fixed;
+                    top: 60px;
+                    left: 20px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    font-family: monospace;
+                    font-size: 12px;
+                    z-index: 1000;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                `;
+                document.body.appendChild(presetInfo);
+            }
+            
+            presetInfo.textContent = `📹 ${presetName}`;
+            presetInfo.style.opacity = '1';
+            
+            // Hide after 2 seconds
+            setTimeout(() => {
+                presetInfo.style.opacity = '0';
+            }, 2000);
+        }
+
+        function togglePresetGuide() {
+            const guide = document.getElementById('presetGuide');
+            if (!guide) return;
+            
+            const isVisible = guide.style.opacity === '1';
+            guide.style.opacity = isVisible ? '0' : '1';
+            
+            if (!isVisible) {
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    guide.style.opacity = '0';
+                }, 5000);
+            }
+        }
+
         // Intro camera sequence
         let introActive = false;
         let introStartTime = 0;
@@ -1638,11 +707,6 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         let savedCameraMode = 1;
         let introHasRun = false; // Flag to prevent intro from running multiple times
 
-        // intro camera sequence
-        // intro camera sequence
-        // intro camera sequence
-        // intro camera sequence
-        // intro camera sequence
         const introKeyframes = [
             { time: 0, pos: [0.0, 1.1177, 0.858585], target: [0.0, 1.12, 0.0] },
             { time: 3, pos: [
@@ -1665,6 +729,12 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         let touchStartY = 0;
         let polarRotation = 2.9824999999999946; // For polar camera mode
         let polarPitch = 0.514; // For polar camera mode
+        let polarDistance = 5.0; // Distance for polar camera mode (for pinch-to-zoom)
+
+        // Pinch gesture tracking
+        let initialPinchDistance = 0;
+        let initialPolarDistance = 5.0;
+        let isPinching = false;
 
         [
   
@@ -1766,25 +836,50 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             showBlueby();
         }
 
-        function showBlueby() {
+        let bluebyTimeout = null; // Track the auto-hide timeout
+
+        function hideBlueby() {
             const mascot = document.getElementById('mascot');
             const chatBubble = document.getElementById('chatBubble');
+            
+            // Clear the auto-hide timeout if it exists
+            if (bluebyTimeout) {
+                clearTimeout(bluebyTimeout);
+                bluebyTimeout = null;
+            }
+            
+            // Hide mascot and chat bubble
+            mascot.classList.add('hide');
+            chatBubble.classList.add('hide');
+            
+            // Remove elements after fade out animation
+            setTimeout(() => {
+                mascot.style.display = 'none';
+                chatBubble.style.display = 'none';
+            }, 500);
+        }
+
+        function showBlueby() {
+            // Don't show mascot on mobile devices since camera controls don't apply
+            if (isMobile) {
+                return;
+            }
+            
+            const mascot = document.getElementById('mascot');
+            const chatBubble = document.getElementById('chatBubble');
+            const gotItButton = document.getElementById('gotItButton');
             
             // Show mascot and chat bubble
             mascot.classList.add('show');
             chatBubble.classList.add('show');
             
-            // Auto-hide after 8 seconds
-            setTimeout(() => {
-                mascot.classList.add('hide');
-                chatBubble.classList.add('hide');
-                
-                // Remove elements after fade out animation
-                setTimeout(() => {
-                    mascot.style.display = 'none';
-                    chatBubble.style.display = 'none';
-                }, 500);
-            }, 8000);
+            // Add click event listener to the "Got it!" button
+            gotItButton.addEventListener('click', hideBlueby);
+            
+            // Auto-hide after 16 seconds
+            bluebyTimeout = setTimeout(() => {
+                hideBlueby();
+            }, 16000);
         }
 
         function calculateLookAtRotationToTarget(target) {
@@ -1860,10 +955,10 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         // HLS Stream Setup
         let hls = null;
         // const streamUrl = 'https://flipfit-cdn.akamaized.net/flip_hls/6656423247ffe600199e8363-15125d/video_h1.m3u8';
-        const streamUrl = 'https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8';
+        // const streamUrl = 'https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8';
 
         function initializeVideo() {
-            console.log('Initializing video system...');
+            console.log('🎬 Initializing video system...');
             
             // Check if we should bypass livestream and use MP4 directly
             if (USE_MP4_INSTEAD_OF_LIVESTREAM) {
@@ -1872,23 +967,74 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 return;
             }
             
-            // Try to initialize livestream first
-            initializeLivestream();
+            // Get the configured video URL to determine initialization strategy
+            let configuredUrl = null;
+            if (currentConfig && currentConfig.video && currentConfig.video.m3u8Url) {
+                configuredUrl = currentConfig.video.m3u8Url;
+                console.log('📋 Found configured video URL:', configuredUrl);
+            }
+            
+            // Determine if the configured URL is HLS or MP4
+            const isConfiguredHLS = configuredUrl && (configuredUrl.includes('.m3u8') || configuredUrl.includes('playlist'));
+            const isConfiguredMP4 = configuredUrl && configuredUrl.includes('.mp4');
+            
+            console.log('📊 URL Analysis:');
+            console.log('  - Configured URL:', configuredUrl);
+            console.log('  - Is HLS:', isConfiguredHLS);
+            console.log('  - Is MP4:', isConfiguredMP4);
+            
+            if (isConfiguredMP4) {
+                console.log('🎥 Config contains MP4 URL, loading MP4 directly but keeping HLS ready...');
+                // Load MP4 directly but ensure HLS infrastructure is available for future switches
+                loadMP4Fallback();
+            } else {
+                console.log('📡 Initializing HLS system (either HLS URL or fallback to default)...');
+                // Try to initialize livestream (either with HLS URL or fallback)
+                initializeLivestream();
+            }
         }
 
-        function initializeLivestream() {
+        function initializeLivestream(overrideUrl = null) {
             console.log('Attempting to initialize livestream...');
+            
+            // Get stream URL from parameter, configuration, or fallback
+            let streamUrl;
+            if (overrideUrl) {
+                streamUrl = overrideUrl;
+                console.log('Using override stream URL:', streamUrl);
+            } else if (currentConfig && currentConfig.video && currentConfig.video.m3u8Url) {
+                streamUrl = currentConfig.video.m3u8Url;
+                console.log('Using stream URL from config:', streamUrl);
+            } else {
+                // Fallback to default URL if config not loaded yet
+                streamUrl = "https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8";
+                console.log('Using fallback stream URL (config not loaded):', streamUrl);
+            }
+            
+            // Validate URL format
+            if (!streamUrl || (!streamUrl.includes('.m3u8') && !streamUrl.includes('playlist'))) {
+                console.warn('Invalid or non-HLS URL detected:', streamUrl);
+                console.log('Falling back to MP4 due to invalid URL format...');
+                loadMP4Fallback();
+                return;
+            }
+            
+            console.log('🎬 Starting HLS stream initialization with URL:', streamUrl);
+            console.log('⏱️ Timeout set to:', LIVESTREAM_TIMEOUT + 'ms');
             
             // Set up timeout for livestream
             const livestreamTimeout = setTimeout(() => {
-                console.warn('Livestream timeout reached, falling back to MP4...');
+                console.warn('⚠️ Livestream timeout reached after', LIVESTREAM_TIMEOUT + 'ms', 'falling back to MP4...');
                 livestreamFailed = true;
                 cleanupHLS();
                 loadMP4Fallback();
             }, LIVESTREAM_TIMEOUT);
             
+            // Store timeout reference for cleanup
+            window.livestreamTimeout = livestreamTimeout;
+            
             if (Hls.isSupported()) {
-                console.log('HLS.js is supported, using HLS.js');
+                console.log('✅ HLS.js is supported, using HLS.js');
                 hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
@@ -1917,32 +1063,49 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                     requestMediaKeySystemAccessFunc: undefined
                 });
                 
+                console.log('📡 Loading HLS source:', streamUrl);
                 hls.loadSource(streamUrl);
                 hls.attachMedia(video);
                 
                 hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    console.log('HLS manifest parsed successfully');
+                    console.log('✅ HLS manifest parsed successfully');
                     clearTimeout(livestreamTimeout);
                     updateStreamIndicator(true);
+                    
+                    // Reapply shader uniforms to ensure chroma key settings persist
+                    if (gl && program && currentConfig) {
+                        console.log('🎨 Reapplying shader uniforms after HLS manifest parsed...');
+                        updateShaderUniforms(currentConfig);
+                    }
+                    
+                    // If video was already started and playing, ensure it continues
+                    if (videoStarted && !video.paused) {
+                        console.log('▶️ Ensuring HLS stream continues playing...');
+                        video.play().catch(error => {
+                            console.warn('Failed to continue HLS playback:', error);
+                        });
+                    }
                 });
                 
                 hls.on(Hls.Events.ERROR, function (event, data) {
-                    console.warn('HLS error:', data);
+                    console.warn('❌ HLS error:', data.type, data.details, data);
                     if (data.fatal) {
                         clearTimeout(livestreamTimeout);
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                console.log('Fatal network error encountered, falling back to MP4...');
+                                console.log('💥 Fatal network error encountered, falling back to MP4...');
+                                console.log('Network error details:', data.details, data.response);
                                 livestreamFailed = true;
                                 cleanupHLS();
                                 loadMP4Fallback();
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
-                                console.log('Fatal media error encountered, trying to recover...');
+                                console.log('🔧 Fatal media error encountered, trying to recover...');
                                 hls.recoverMediaError();
                                 break;
                             default:
-                                console.log('Fatal error, falling back to MP4...');
+                                console.log('💥 Fatal error, falling back to MP4...');
+                                console.log('Error details:', data);
                                 livestreamFailed = true;
                                 cleanupHLS();
                                 loadMP4Fallback();
@@ -1952,17 +1115,32 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 });
                 
                 hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
-                    console.log('Quality level switched to:', data.level);
+                    console.log('🔄 Quality level switched to:', data.level);
                 });
                 
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                console.log('Native HLS support detected (Safari)');
+                console.log('🍎 Native HLS support detected (Safari)');
+                console.log('📡 Loading native HLS source:', streamUrl);
                 video.src = streamUrl;
                 
                 video.addEventListener('loadedmetadata', function () {
-                    console.log('Native HLS stream loaded');
+                    console.log('✅ Native HLS stream loaded');
                     clearTimeout(livestreamTimeout);
                     updateStreamIndicator(true);
+                    
+                    // Reapply shader uniforms to ensure chroma key settings persist
+                    if (gl && program && currentConfig) {
+                        console.log('🎨 Reapplying shader uniforms after native HLS load...');
+                        updateShaderUniforms(currentConfig);
+                    }
+                    
+                    // If video was already started and playing, ensure it continues
+                    if (videoStarted && !video.paused) {
+                        console.log('▶️ Ensuring native HLS stream continues playing...');
+                        video.play().catch(error => {
+                            console.warn('Failed to continue native HLS playback:', error);
+                        });
+                    }
                 });
                 
                 video.addEventListener('error', function(e) {
@@ -1980,24 +1158,71 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             }
         }
 
-        function loadMP4Fallback() {
-            console.log('Loading MP4 fallback video...');
-            isUsingFallback = true;
+        function loadMP4Fallback(overrideUrl = null) {
+            console.log('🎥 Loading MP4 video...');
+            
+            // Determine the MP4 URL to use
+            let mp4Url;
+            let isConfiguredMP4 = false;
+            
+            if (overrideUrl) {
+                mp4Url = overrideUrl;
+                isConfiguredMP4 = overrideUrl.includes('.mp4');
+                console.log('📋 Loading override MP4 URL:', mp4Url);
+            } else {
+                // Determine if this is a configured MP4 or a fallback
+                const configuredUrl = currentConfig && currentConfig.video && currentConfig.video.m3u8Url;
+                isConfiguredMP4 = configuredUrl && configuredUrl.includes('.mp4');
+                
+                if (isConfiguredMP4) {
+                    mp4Url = configuredUrl;
+                    console.log('📋 Loading configured MP4 URL:', mp4Url);
+                } else {
+                    mp4Url = MP4_FALLBACK_URL;
+                    console.log('🔄 Loading MP4 fallback due to HLS failure:', mp4Url);
+                }
+            }
+            
+            // Set fallback state based on whether this is configured content or actual fallback
+            if (isConfiguredMP4) {
+                isUsingFallback = false; // This is not a fallback, it's the intended source
+            } else {
+                isUsingFallback = true; // This is a fallback
+            }
+            
+            // Store current playing state before switching
+            const wasPlaying = !video.paused;
             
             // Clean up any existing HLS
             cleanupHLS();
             
-            // Set video source to MP4
-            video.src = MP4_FALLBACK_URL;
+            // Set video source
+            video.src = mp4Url;
             video.loop = true; // Loop the MP4 for continuous playback
             
+            console.log('🎬 Loading MP4 from:', mp4Url);
+            
             video.addEventListener('loadedmetadata', function() {
-                console.log('MP4 fallback loaded successfully');
-                updateStreamIndicator(false);
+                console.log('✅ MP4 loaded successfully');
+                updateStreamIndicator(!isUsingFallback); // Show as live if it's configured content
+                
+                // Reapply shader uniforms to ensure chroma key settings persist
+                if (gl && program && currentConfig) {
+                    console.log('🎨 Reapplying shader uniforms after MP4 load...');
+                    updateShaderUniforms(currentConfig);
+                }
+                
+                // If video was playing before switch, resume playback
+                if (wasPlaying && videoStarted) {
+                    console.log('▶️ Resuming playback with MP4...');
+                    video.play().catch(error => {
+                        console.warn('Failed to resume MP4 playback:', error);
+                    });
+                }
             });
             
             video.addEventListener('error', function(e) {
-                console.error('MP4 fallback failed to load:', e);
+                console.error('❌ MP4 failed to load:', e);
                 // Show error message to user
                 updateStreamIndicator(false, true);
             });
@@ -2028,7 +1253,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         }
 
         // Initialize video system when the page loads
-        initializeVideo();
+        // initializeVideo(); // REMOVED - this was causing the error because currentConfig is null
 
         // Cleanup function for HLS
         function cleanupHLS() {
@@ -2196,15 +1421,120 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         }
 
         enterButton.addEventListener('click', () => {
-            playOverlay.classList.add('hidden');
+            // Start the blink animation on the welcome form
             passwordForm.classList.add('animate');
-            startVideo();
             
-            // Show mascot after screen separation animation completes
-            // Animation takes 2.4s + 0.5s delay = 2.9s total
+            // After the blink animation completes (0.5s), start the parting animation
             setTimeout(() => {
-                showMascot();
-            }, 3000); // Slight buffer after animation
+                document.getElementById('welcomeScreen').classList.add('hidden');
+            }, 500); // Duration of blink animation
+        });
+
+        // Character selection functionality
+        let selectedColor = null;
+        let username = '';
+        let hasJoinedCube = false; // Track whether user has completed character selection
+
+        const usernameInput = document.getElementById('usernameInput');
+        const joinButton = document.getElementById('joinButton');
+        const characterMessage = document.getElementById('characterMessage');
+        const orbOptions = document.querySelectorAll('.orb-option');
+        const characterForm = document.getElementById('characterForm');
+
+        // Username input validation
+        usernameInput.addEventListener('input', (e) => {
+            username = e.target.value.trim();
+            validateCharacterSelection();
+        });
+
+        // Orb color selection
+        orbOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remove previous selection
+                orbOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Add selection to clicked option
+                option.classList.add('selected');
+                selectedColor = option.dataset.color;
+                
+                validateCharacterSelection();
+            });
+        });
+
+        function validateCharacterSelection() {
+            const isValid = username.length >= 2 && selectedColor !== null;
+            joinButton.disabled = !isValid;
+            
+            if (username.length === 0 && selectedColor === null) {
+                characterMessage.textContent = 'Enter a username (2+ characters) and select an orb color to join';
+                characterMessage.style.color = '#000080'; // Classic dark blue
+            } else if (username.length > 0 && username.length < 2) {
+                characterMessage.textContent = 'Username must be at least 2 characters';
+                characterMessage.style.color = '#800000'; // Classic dark red
+            } else if (username.length >= 2 && !selectedColor) {
+                characterMessage.textContent = 'Please select an orb color above';
+                characterMessage.style.color = '#000080'; // Classic dark blue
+            } else if (username.length === 0 && selectedColor) {
+                characterMessage.textContent = 'Please enter a username (2+ characters)';
+                characterMessage.style.color = '#000080'; // Classic dark blue
+            } else if (isValid) {
+                characterMessage.textContent = `Ready to join as ${username}!`;
+                characterMessage.style.color = '#008000'; // Classic dark green
+            } else {
+                characterMessage.textContent = 'Enter a username and select a color to continue';
+                characterMessage.style.color = '#000080'; // Classic dark blue
+            }
+        }
+
+        // Initialize with helpful message
+        characterMessage.textContent = 'Enter a username (2+ characters) and select an orb color to join';
+        characterMessage.style.color = '#000080'; // Classic dark blue
+        
+        // Ensure button starts disabled and validation runs
+        validateCharacterSelection();
+
+        // Join button functionality
+        joinButton.addEventListener('click', () => {
+            if (username.length >= 2 && selectedColor) {
+                // Store user data (you can expand this to send to server)
+                localStorage.setItem('cubeUsername', username);
+                localStorage.setItem('cubeOrbColor', selectedColor);
+                
+                // Enable controls now that user has joined
+                hasJoinedCube = true;
+                
+                // Connect to WebSocket with user data
+                connectWebSocketWithUserData(username, selectedColor);
+                
+                // Start the blink animation on the character form
+                characterForm.classList.add('animate');
+                
+                // After the blink animation completes (0.5s), start the parting animation
+                setTimeout(() => {
+                    document.getElementById('characterSelection').classList.add('hidden');
+                    
+                    // Start the video after the parting animation starts
+                    setTimeout(() => {
+                        startVideo();
+                        
+                        // Show mascot after screen separation animation completes
+                        setTimeout(() => {
+                            showMascot();
+                        }, 1500); // Remaining time for parting animation to complete
+                        
+                    }, 1200); // Half of the 2.4s transition
+                    
+                }, 500); // Duration of blink animation
+                
+                console.log(`User ${username} joined with color ${selectedColor}`);
+            }
+        });
+
+        // Allow Enter key to submit character selection
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !joinButton.disabled) {
+                joinButton.click();
+            }
         });
 
         function showMascot() {
@@ -2223,6 +1553,11 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
+            // Don't process any controls until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
             // Handle "/" key to open chat (only if chat input is not focused)
             if (e.key === '/' && !chatInputFocused) {
                 focusChat();
@@ -2275,6 +1610,36 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 updateCameraModeIndicator();
             }
             
+            // Toggle preset guide with 'P' key (only on desktop)
+            if (e.code === 'KeyP' && !isMobile) {
+                togglePresetGuide();
+            }
+            
+            // Log current camera position with 'G' key (only on desktop)
+            if (e.code === 'KeyG' && !isMobile) {
+                console.log('📹 Current Camera Position:');
+                console.log(`Position: [${cameraPos[0].toFixed(3)}, ${cameraPos[1].toFixed(3)}, ${cameraPos[2].toFixed(3)}]`);
+                console.log(`Rotation: [${cameraRot[0].toFixed(3)}, ${cameraRot[1].toFixed(3)}]`);
+                console.log('Copy this for preset:', `{ pos: [${cameraPos[0].toFixed(3)}, ${cameraPos[1].toFixed(3)}, ${cameraPos[2].toFixed(3)}], name: 'Custom Angle' }`);
+                
+                // Show visual feedback
+                showPresetInfo('Position Logged to Console');
+            }
+            
+            // Camera presets with number keys (1-9, 0) - only on desktop
+            if (!isMobile) {
+                const numberKeys = {
+                    'Digit1': '1', 'Digit2': '2', 'Digit3': '3', 'Digit4': '4', 'Digit5': '5',
+                    'Digit6': '6', 'Digit7': '7', 'Digit8': '8', 'Digit9': '9', 'Digit0': '0'
+                };
+                
+                if (numberKeys[e.code]) {
+                    jumpToPreset(numberKeys[e.code]);
+                    e.preventDefault(); // Prevent any default behavior
+                    return;
+                }
+            }
+            
             // Request pointer lock on first key press for mouse look (only in free-fly mode)
             if (!mouseLocked && cameraMode === 1 && (e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD')) {
                 document.body.requestPointerLock();
@@ -2282,6 +1647,11 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         });
 
         document.addEventListener('keyup', (e) => {
+            // Don't process any controls until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
             // If chat input is focused, don't process camera controls
             if (chatInputFocused) {
                 return;
@@ -2292,10 +1662,19 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
 
         // Mouse controls
         document.addEventListener('pointerlockchange', () => {
+            // Only allow pointer lock if user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
             mouseLocked = document.pointerLockElement === document.body;
         });
 
         document.addEventListener('mousemove', (e) => {
+            // Don't process mouse controls until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
             if (mouseLocked && cameraMode === 1) { // Only in free-fly mode
                 cameraRot[1] += e.movementX * MOUSE_SENSITIVITY; // yaw
                 cameraRot[0] += e.movementY * MOUSE_SENSITIVITY; // pitch (not inverted)
@@ -2314,15 +1693,56 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
 
         // Touch event handlers for mobile
         document.addEventListener('touchstart', (e) => {
+            // Don't process touch controls until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
             if (e.touches.length === 1) {
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
+                isPinching = false;
+            } else if (e.touches.length === 2) {
+                // Start pinch gesture
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                initialPinchDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) + 
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                initialPolarDistance = polarDistance;
+                isPinching = true;
+                console.log('Pinch started:', { initialPinchDistance, initialPolarDistance });
             }
         });
 
         document.addEventListener('touchmove', (e) => {
+            // Don't process touch controls until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
             e.preventDefault(); // Prevent scrolling
-            if (e.touches.length === 1 && cameraMode === 0) { // Only in polar mode
+            
+            if (e.touches.length === 2 && cameraMode === 0 && isPinching) {
+                // Handle pinch-to-zoom
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const currentPinchDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) + 
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                // Calculate zoom factor based on pinch distance change
+                const pinchRatio = currentPinchDistance / initialPinchDistance;
+                polarDistance = initialPolarDistance / pinchRatio;
+                
+                // Clamp distance to reasonable bounds
+                polarDistance = Math.max(1.0, Math.min(15.0, polarDistance));
+                
+                console.log('Pinch zoom:', { currentPinchDistance, pinchRatio, polarDistance });
+            } else if (e.touches.length === 1 && cameraMode === 0 && !isPinching) {
+                // Handle single-finger rotation (only when not pinching)
                 const touch = e.touches[0];
                 const deltaX = touch.clientX - touchStartX;
                 const deltaY = touch.clientY - touchStartY;
@@ -2333,8 +1753,6 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 
                 // Clamp pitch
                 polarPitch = Math.max(0.1, Math.min(0.9, polarPitch));
-
-                console.log(polarRotation, polarPitch);
                 
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
@@ -2342,10 +1760,28 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         });
 
         document.addEventListener('touchend', (e) => {
-            // Touch ended
+            // Don't process touch controls until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
+            if (e.touches.length < 2) {
+                isPinching = false;
+            }
+            
+            // Update touch start position if there's still one finger down
+            if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
         });
 
         function updateCamera() {
+            // Don't process camera updates until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
             // Process gamepad input first
             processGamepadInput();
             
@@ -2475,7 +1911,8 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 }
             }
 
-            console.log(cameraPos);
+            // camera position log
+            // console.log(cameraPos);
         }
 
         function calculateLookAtRotation() {
@@ -2497,10 +1934,12 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         }
 
         // Orb management
-        const MAX_ORBS = 6; // Reduced from 10
+        const MAX_ORBS = 100; // Increased from 6 to test performance impact
+        const MAX_ORB_SIZE = 0.5; // Maximum orb radius - adjust this to change biggest orb size
         const ORB_LIFETIME = 30000; // 30 seconds lifetime for each orb (increased from 10s)
         const SPAWN_INTERVAL = 4000; // 4 seconds between spawns (increased from 3s)
         let orbs = [];
+        let realUserOrbs = new Map(); // Track real user orbs separately
 
         const RANDOM_NAMES = [
             "umru", "ryjelsum", "qui.et", "lost_in_the_loop", "npnc", "theresa_sweetheart", 
@@ -2526,14 +1965,28 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         }
 
         class Orb {
-    constructor(name) {
+    constructor(name, isRealUser = false, userId = null, userColor = null) {
         this.name = name;
+        this.isRealUser = isRealUser;
+        this.userId = userId;
         this.position = this.getValidPosition();
-        this.color = [
-            Math.random() * 0.5 + 0.5, // Brighter colors (0.5 - 1.0)
-            Math.random() * 0.5 + 0.5,
-            Math.random() * 0.5 + 0.5
-        ];
+        
+        if (isRealUser && userColor) {
+            // Use the user's selected color
+            this.color = userColor;
+            // Add interpolation properties for real users
+            this.targetPosition = [...this.position];
+            this.lastUpdateTime = Date.now();
+            this.interpolationSpeed = 0.1; // How fast to interpolate (0.1 = 10% per frame)
+        } else {
+            // Generate random color for AI orbs
+            this.color = [
+                Math.random() * 0.5 + 0.5, // Brighter colors (0.5 - 1.0)
+                Math.random() * 0.5 + 0.5,
+                Math.random() * 0.5 + 0.5
+            ];
+        }
+        
         this.createdAt = Date.now();
         this.textPosition = [
             this.position[0],
@@ -2544,16 +1997,18 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         // Mark atlas for update when new orb is created
         textAtlasNeedsUpdate = true;
         
-        // Movement properties
-        this.velocity = [0, 0, 0];
-        this.targetPosition = [...this.position];
-        this.moveSpeed = 0.01 + Math.random() * 0.02; // Random speed between 0.01-0.03
-        this.lastMoveTime = Date.now();
-        this.moveInterval = 2000 + Math.random() * 4000; // Move every 2-6 seconds
-        this.movementPattern = Math.floor(Math.random() * 3); // 0: wandering, 1: orbiting, 2: exploring
-        this.orbitCenter = [...this.position];
-        this.orbitAngle = Math.random() * Math.PI * 2;
-        this.orbitRadius = 0.5 + Math.random() * 1.0;
+        if (!isRealUser) {
+            // Movement properties for AI orbs only
+            this.velocity = [0, 0, 0];
+            this.targetPosition = [...this.position];
+            this.moveSpeed = 0.01 + Math.random() * 0.02; // Random speed between 0.01-0.03
+            this.lastMoveTime = Date.now();
+            this.moveInterval = 2000 + Math.random() * 4000; // Move every 2-6 seconds
+            this.movementPattern = Math.floor(Math.random() * 3); // 0: wandering, 1: orbiting, 2: exploring
+            this.orbitCenter = [...this.position];
+            this.orbitAngle = Math.random() * Math.PI * 2;
+            this.orbitRadius = 0.5 + Math.random() * 1.0;
+        }
     }
 
     getValidPosition() {
@@ -2568,7 +2023,58 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         ];
     }
 
+    updatePosition(newPosition) {
+        // For real user orbs, set target position for smooth interpolation
+        if (this.isRealUser) {
+            this.targetPosition = [...newPosition];
+            this.lastUpdateTime = Date.now();
+        }
+    }
+
+    smoothInterpolate() {
+        // Only interpolate for real user orbs
+        if (!this.isRealUser) return;
+        
+        // Calculate distance to target
+        const dx = this.targetPosition[0] - this.position[0];
+        const dy = this.targetPosition[1] - this.position[1];
+        const dz = this.targetPosition[2] - this.position[2];
+        const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        
+        // Only interpolate if there's a meaningful distance
+        if (distance > 0.01) {
+            // Smooth interpolation towards target
+            this.position[0] += dx * this.interpolationSpeed;
+            this.position[1] += dy * this.interpolationSpeed;
+            this.position[2] += dz * this.interpolationSpeed;
+            
+            // Update text position
+            this.updateTextPosition();
+        }
+    }
+    
+    updateTextPosition() {
+        this.textPosition[0] = this.position[0];
+        
+        // Calculate dynamic radius to position text above the orb properly
+        const distanceToCenter = Math.sqrt(
+            this.position[0] * this.position[0] + 
+            this.position[1] * this.position[1] + 
+            this.position[2] * this.position[2]
+        );
+        const powerScale = Math.pow(Math.max(0.0, distanceToCenter * 0.3), 3.0);
+        const dynamicRadius = Math.min(0.03 + powerScale * 0.15, MAX_ORB_SIZE); // Use configurable max size
+        
+        const baseClearance = 0.08;
+        const scaledClearance = baseClearance + (dynamicRadius * 0.5);
+        this.textPosition[1] = this.position[1] + dynamicRadius + scaledClearance;
+        this.textPosition[2] = this.position[2];
+    }
+
     updateMovement() {
+        // Only AI orbs should move automatically
+        if (this.isRealUser) return;
+        
         const now = Date.now();
         
         // Check if it's time to choose a new target
@@ -2592,23 +2098,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         }
         
         // Update text position to follow orb
-        this.textPosition[0] = this.position[0];
-        
-        // Calculate dynamic radius to position text above the orb properly
-        const distanceToCenter = Math.sqrt(
-            this.position[0] * this.position[0] + 
-            this.position[1] * this.position[1] + 
-            this.position[2] * this.position[2]
-        );
-        const powerScale = Math.pow(Math.max(0.0, distanceToCenter * 0.3), 3.0);
-        const dynamicRadius = 0.05 + powerScale * 0.15; // Same calculation as in updateOrbUniforms
-        
-        // Position text above the orb with proportional clearance
-        // Use a smaller base clearance (0.08) and scale it with the orb size
-        const baseClearance = 0.08;
-        const scaledClearance = baseClearance + (dynamicRadius * 0.5); // Additional clearance based on orb size
-        this.textPosition[1] = this.position[1] + dynamicRadius + scaledClearance;
-        this.textPosition[2] = this.position[2];
+        this.updateTextPosition();
     }
     
     chooseNewTarget() {
@@ -2760,6 +2250,20 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             return texture;
         }
 
+        // Add function to load shader files
+        async function loadShaderFile(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to load shader: ${url} (${response.status})`);
+                }
+                return await response.text();
+            } catch (error) {
+                console.error('Error loading shader file:', error);
+                throw error;
+            }
+        }
+
         function createShader(gl, type, source) {
             const shader = gl.createShader(type);
             gl.shaderSource(shader, source);
@@ -2787,7 +2291,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             return positionBuffer;
         }
 
-        function initGL() {
+        async function initGL() {
             const canvas = document.getElementById('glCanvas');
             gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
             
@@ -2799,8 +2303,9 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             }
 
             try {
-                const vertexShaderSource = document.querySelector('#vertexShader').textContent;
-                const fragmentShaderSource = document.querySelector('#fragmentShader').textContent;
+                // Load shaders from external files
+                const vertexShaderSource = await loadShaderFile('vert.glsl');
+                const fragmentShaderSource = await loadShaderFile('frag.glsl');
 
                 const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
                 const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -2871,16 +2376,31 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         function manageOrbs() {
             const now = Date.now();
             
+            // Filter out expired AI orbs only (real user orbs don't expire)
             orbs = orbs.filter(orb => {
+                if (orb.isRealUser) {
+                    return true; // Keep all real user orbs
+                }
+                
                 const alive = (now - orb.createdAt) < ORB_LIFETIME;
                 if (!alive) {
-                    orb.removeLabel();
+                    orb.removeLabel && orb.removeLabel();
+                    // Remove from usedNames if it was an AI orb
+                    usedNames.delete(orb.name);
                 }
                 return alive;
             });
 
-            if (orbs.length < MAX_ORBS) {
-                orbs.push(new Orb(getRandomName()));
+            // Count AI orbs and real user orbs separately
+            const aiOrbs = orbs.filter(orb => !orb.isRealUser);
+            const realUserOrbCount = orbs.filter(orb => orb.isRealUser).length;
+            
+            // Only spawn AI orbs if we have room (prioritize real users)
+            const maxAiOrbs = Math.max(0, MAX_ORBS - realUserOrbCount);
+            if (aiOrbs.length < maxAiOrbs) {
+                const newAiOrb = new Orb(getRandomName(), false);
+                orbs.push(newAiOrb);
+                console.log(`Spawned AI orb: ${newAiOrb.name} (AI: ${aiOrbs.length + 1}, Real: ${realUserOrbCount})`);
             }
 
             setTimeout(manageOrbs, SPAWN_INTERVAL);
@@ -2899,8 +2419,8 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         }
 
         function updateOrbUniforms() {
-            const positions = new Float32Array(MAX_ORBS * 3); // Now 6 * 3 = 18
-            const colors = new Float32Array(MAX_ORBS * 3); // Now 6 * 3 = 18
+            const positions = new Float32Array(MAX_ORBS * 3); // Now 100 * 3 = 300
+            const colors = new Float32Array(MAX_ORBS * 3); // Now 100 * 3 = 300
             const radii = new Float32Array(MAX_ORBS); // New array for dynamic radii
 
             orbs.forEach((orb, index) => {
@@ -2919,7 +2439,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                     orb.position[2] * orb.position[2]
                 );
                 const powerScale = Math.pow(Math.max(0.0, distanceToCenter * 0.3), 3.0);
-                radii[index] = 0.05 + powerScale * 0.15; // ORB_RADIUS * 0.5 + powerScale * 0.15
+                radii[index] = Math.min(0.03 + powerScale * 0.15, MAX_ORB_SIZE); // Use configurable max size
             });
 
             gl.uniform3fv(uniformLocations.uOrbPositions, positions);
@@ -2952,7 +2472,13 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 updateIntroCamera(); // Update intro camera sequence if active
 
                 // Update orb movements
-                orbs.forEach(orb => orb.updateMovement());
+                orbs.forEach(orb => {
+                    if (orb.isRealUser) {
+                        orb.smoothInterpolate(); // Smooth interpolation for real users
+                    } else {
+                        orb.updateMovement(); // AI movement for fake orbs
+                    }
+                });
 
                 // Update stream time
                 const elapsed = Date.now() - streamStartTime;
@@ -2971,6 +2497,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 gl.uniform2f(uniformLocations.uCameraRot, cameraRot[0], cameraRot[1]);
                 gl.uniform1i(uniformLocations.uUsePolarCamera, usePolarCamera ? 1 : 0);
                 gl.uniform2f(uniformLocations.uPolarRotation, polarPitch, polarRotation);
+                gl.uniform1f(uniformLocations.uPolarDistance, polarDistance);
 
                 updateOrbUniforms();
                 updateTextUniforms();
@@ -2997,7 +2524,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 const now = Date.now();
                 if (now - lastPerformanceLog > 5000) { // Log every 5 seconds
                     const fps = frameCount / ((now - lastPerformanceLog) / 1000);
-                    console.log(`Performance: ${fps.toFixed(1)} FPS, ${orbs.length} orbs, ${textureCreationCount} textures created, Canvas pool: ${canvasPool.length}`);
+                    console.log(`Performance: ${fps.toFixed(1)} FPS, ${orbs.length} orbs, ${textureCreationCount} textures created, Canvas pool: ${canvasPool.length} [Text chroma keying: ENABLED]`);
                     frameCount = 0;
                     lastPerformanceLog = now;
                 }
@@ -3028,7 +2555,27 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
 
-        window.onload = initGL;
+        window.onload = async () => {
+            // Initialize WebGL first
+            await initGL();
+            
+            // Then load configuration and apply it to the initialized WebGL context
+            loadConfiguration().then(() => {
+                console.log('✅ Configuration loaded after WebGL initialization, applying settings...');
+                // Apply configuration now that WebGL is ready
+                if (currentConfig) {
+                    applyConfiguration(currentConfig);
+                }
+                // Initialize video with the loaded configuration
+                initializeVideo();
+            }).catch(error => {
+                console.error('Failed to load configuration, using defaults:', error);
+                // Apply default config and initialize video
+                currentConfig = getDefaultClientConfig();
+                applyConfiguration(currentConfig);
+                initializeVideo();
+            });
+        };
         window.onmousemove = (e) => {
             if (!mouseLocked) {
                 mouseX = e.clientX;
@@ -3044,15 +2591,22 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
                 uCameraRot: gl.getUniformLocation(program, 'uCameraRot'),
                 uUsePolarCamera: gl.getUniformLocation(program, 'uUsePolarCamera'),
                 uPolarRotation: gl.getUniformLocation(program, 'uPolarRotation'),
+                uPolarDistance: gl.getUniformLocation(program, 'uPolarDistance'),
                 uOrbPositions: gl.getUniformLocation(program, 'uOrbPositions'),
                 uOrbColors: gl.getUniformLocation(program, 'uOrbColors'),
                 uOrbCount: gl.getUniformLocation(program, 'uOrbCount'),
                 uOrbRadii: gl.getUniformLocation(program, 'uOrbRadii'),
                 uTextPositions: gl.getUniformLocation(program, 'uTextPositions'),
                 uTextCount: gl.getUniformLocation(program, 'uTextCount'),
-                uTextTexture: gl.getUniformLocation(program, 'uTextTexture')
+                uTextTexture: gl.getUniformLocation(program, 'uTextTexture'),
+                uPlaneSize: gl.getUniformLocation(program, 'uPlaneSize'),
+                uPlanePosition: gl.getUniformLocation(program, 'uPlanePosition'),
+                // Chroma key uniforms
+                uChromaKeyColor: gl.getUniformLocation(program, 'uChromaKeyColor'),
+                uChromaThreshold: gl.getUniformLocation(program, 'uChromaThreshold'),
+                uChromaEnabled: gl.getUniformLocation(program, 'uChromaEnabled')
             };
-            console.log('Cached uniform locations for performance');
+            console.log('✅ Cached uniform locations for performance (including chroma key)');
         }
 
         function getCanvasFromPool() {
@@ -3268,6 +2822,11 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         let lastButtonStates = {};
 
         function processGamepadInput() {
+            // Don't process gamepad input until user has joined the cube
+            if (!hasJoinedCube) {
+                return;
+            }
+            
             const input = getGamepadInput();
             if (!input) return;
             
@@ -3354,8 +2913,27 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 5;
         const reconnectDelay = 3000;
+        let userUsername = null;
+        let userColor = null;
+        let connectionState = 'disconnected'; // 'disconnected', 'connecting', 'connected'
+        let heartbeatInterval = null;
+        let lastHeartbeat = 0;
+
+        function connectWebSocketWithUserData(username, color) {
+            userUsername = username;
+            userColor = color;
+            connectWebSocket();
+        }
 
         function connectWebSocket() {
+            // Prevent multiple simultaneous connections
+            if (connectionState === 'connecting' || connectionState === 'connected') {
+                console.log('WebSocket already connecting/connected, skipping...');
+                return;
+            }
+            
+            connectionState = 'connecting';
+            
             try {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const wsUrl = `${protocol}//${window.location.host}`;
@@ -3363,59 +2941,170 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
 
                 ws.onopen = function() {
                     console.log('WebSocket connected');
+                    connectionState = 'connected';
                     reconnectAttempts = 0;
                     addSystemMessage('Connected to live chat');
+                    
+                    // Send user data to server if available
+                    if (userUsername && userColor) {
+                        ws.send(JSON.stringify({
+                            type: 'set_user_data',
+                            username: userUsername,
+                            color: userColor
+                        }));
+                    }
+                    
+                    // Start heartbeat to keep connection alive
+                    startHeartbeat();
                 };
 
                 ws.onmessage = function(event) {
                     try {
                         const data = JSON.parse(event.data);
+                        
+                        // Handle heartbeat response
+                        if (data.type === 'pong') {
+                            lastHeartbeat = Date.now();
+                            return;
+                        }
+                        
                         handleWebSocketMessage(data);
                     } catch (error) {
                         console.error('Error parsing WebSocket message:', error);
                     }
                 };
 
-                ws.onclose = function() {
-                    console.log('WebSocket disconnected');
+                ws.onclose = function(event) {
+                    console.log('WebSocket disconnected', event.code, event.reason);
+                    connectionState = 'disconnected';
+                    stopHeartbeat();
                     addSystemMessage('Disconnected from chat');
                     
-                    // Attempt to reconnect
-                    if (reconnectAttempts < maxReconnectAttempts) {
+                    // Clear our own orbs from the display (we'll get fresh data on reconnect)
+                    if (viewerId) {
+                        removeRealUserOrb(viewerId);
+                        viewerId = null;
+                    }
+                    
+                    // Attempt to reconnect if it wasn't a clean close
+                    if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
                         reconnectAttempts++;
                         console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
                         setTimeout(connectWebSocket, reconnectDelay);
-                    } else {
+                    } else if (reconnectAttempts >= maxReconnectAttempts) {
                         addSystemMessage('Failed to reconnect. Please refresh the page.');
                     }
                 };
 
                 ws.onerror = function(error) {
                     console.error('WebSocket error:', error);
+                    connectionState = 'disconnected';
                 };
 
             } catch (error) {
                 console.error('Failed to create WebSocket connection:', error);
+                connectionState = 'disconnected';
             }
         }
+
+        function startHeartbeat() {
+            stopHeartbeat(); // Clear any existing heartbeat
+            lastHeartbeat = Date.now();
+            
+            heartbeatInterval = setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'ping' }));
+                    
+                    // Check if we haven't received a pong in too long
+                    if (Date.now() - lastHeartbeat > 10000) { // 10 seconds timeout
+                        console.log('Heartbeat timeout, closing connection');
+                        ws.close();
+                    }
+                }
+            }, 5000); // Send ping every 5 seconds
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        // Handle browser visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('Page hidden, maintaining connection...');
+            } else {
+                console.log('Page visible, checking connection...');
+                // Check connection health when page becomes visible
+                if (ws && ws.readyState !== WebSocket.OPEN) {
+                    console.log('Connection lost while hidden, reconnecting...');
+                    connectWebSocket();
+                }
+            }
+        });
+
+        // Handle page unload to clean up
+        window.addEventListener('beforeunload', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close(1000, 'Page unloading');
+            }
+        });
 
         function handleWebSocketMessage(data) {
             switch (data.type) {
                 case 'init':
                     viewerId = data.viewerId;
                     console.log('Assigned viewer ID:', viewerId);
+                    
+                    // Clear any existing real user orbs (in case of reconnection)
+                    clearAllRealUserOrbs();
+                    
+                    // Create orbs for existing viewers
+                    if (data.viewers) {
+                        data.viewers.forEach(viewer => {
+                            if (viewer.id !== viewerId) { // Don't create orb for ourselves
+                                createRealUserOrb(viewer.id, viewer.name, viewer.color, viewer.position);
+                            }
+                        });
+                    }
                     break;
                     
                 case 'chat_message':
                     addChatMessage(data.name, data.message, data.timestamp, data.color);
                     break;
                     
-                case 'viewer_joined':
+                // case 'viewer_joined':
+                //     addSystemMessage(`${data.viewer.name} joined the space`);
+                //     break;
+                case 'viewer_updated':
                     addSystemMessage(`${data.viewer.name} joined the space`);
+                    // Create orb for the new/updated user (removeRealUserOrb is called inside createRealUserOrb)
+                    if (data.viewer.id !== viewerId) { // Don't create orb for ourselves
+                        createRealUserOrb(data.viewer.id, data.viewer.name, data.viewer.color, data.viewer.position);
+                    }
+                    break;
+                    
+                case 'position_update':
+                    // Update existing user orb position
+                    if (data.viewerId !== viewerId) { // Don't update our own orb
+                        updateRealUserOrb(data.viewerId, data.position);
+                    }
                     break;
                     
                 case 'viewer_left':
-                    // We could show this, but it might be too noisy
+                    // Remove orb for disconnected user
+                    removeRealUserOrb(data.viewerId);
+                    break;
+                    
+                case 'config_update':
+                    console.log('📨 Received configuration update:', data.config);
+                    console.log('🔍 Update source:', data.updatedBy);
+                    console.log('⏰ Timestamp:', new Date(data.timestamp).toLocaleTimeString());
+                    
+                    // Apply the new configuration
+                    applyConfiguration(data.config);
                     break;
                     
                 default:
@@ -3437,24 +3126,24 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
         const chatSend = document.getElementById('chatSend');
-        const chatReminder = document.getElementById('chatReminder');
+        // const chatReminder = document.getElementById('chatReminder');
 
         let chatInputFocused = false;
 
         // Show reminder initially, then hide after a few seconds
-        setTimeout(() => {
-            chatReminder.style.display = 'block';
-            setTimeout(() => {
-                if (!chatInputFocused) {
-                    chatReminder.style.display = 'none';
-                }
-            }, 4000);
-        }, 2000);
+        // setTimeout(() => {
+        //     chatReminder.style.display = 'block';
+        //     setTimeout(() => {
+        //         if (!chatInputFocused) {
+        //             chatReminder.style.display = 'none';
+        //         }
+        //     }, 4000);
+        // }, 2000);
 
         function focusChat() {
             chatInput.focus();
             chatInputFocused = true;
-            chatReminder.style.display = 'none';
+            // chatReminder.style.display = 'none';
         }
 
         function addChatMessage(username, message, timestamp, color) {
@@ -3514,7 +3203,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         // Track chat input focus state
         chatInput.addEventListener('focus', () => {
             chatInputFocused = true;
-            chatReminder.style.display = 'none';
+            // chatReminder.style.display = 'none';
         });
 
         chatInput.addEventListener('blur', () => {
@@ -3522,7 +3211,7 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             // Show reminder after a delay if input is still not focused
             setTimeout(() => {
                 if (!chatInputFocused) {
-                    chatReminder.style.display = 'block';
+                    // chatReminder.style.display = 'block';
                 }
             }, 2000);
         });
@@ -3537,23 +3226,104 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
         });
 
         // Initialize WebSocket connection when page loads
-        window.addEventListener('load', () => {
-            // Wait a bit for the page to fully load before connecting
-            setTimeout(connectWebSocket, 1000);
-        });
+        // REMOVED: Duplicate window load event listener - initialization now handled in main window.onload
+        // window.addEventListener('load', () => {
+        //     loadConfiguration().then(() => {
+        //         console.log('Configuration loaded, initializing video...');
+        //         initializeVideo();
+        //     }).catch(error => {
+        //         console.error('Failed to load configuration, using defaults:', error);
+        //         initializeVideo();
+        //     });
+        // });
 
         // Send position updates to server (if we want to track viewer positions)
+        let lastSentPosition = [0, 0, 0];
+        let lastPositionUpdateTime = 0;
+        const POSITION_UPDATE_INTERVAL = 100; // Send updates every 100ms (10 FPS)
+        const MIN_MOVEMENT_THRESHOLD = 0.05; // Only send if moved more than this distance
+
         function sendPositionUpdate() {
             if (ws && ws.readyState === WebSocket.OPEN && viewerId) {
-                ws.send(JSON.stringify({
-                    type: 'position_update',
-                    position: cameraPos
-                }));
+                const now = Date.now();
+                
+                // Throttle updates to avoid spam
+                if (now - lastPositionUpdateTime < POSITION_UPDATE_INTERVAL) {
+                    return;
+                }
+                
+                // Calculate distance moved since last update
+                const dx = cameraPos[0] - lastSentPosition[0];
+                const dy = cameraPos[1] - lastSentPosition[1];
+                const dz = cameraPos[2] - lastSentPosition[2];
+                const distanceMoved = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                
+                // Only send if we've moved significantly
+                if (distanceMoved > MIN_MOVEMENT_THRESHOLD) {
+                    ws.send(JSON.stringify({
+                        type: 'position_update',
+                        position: [...cameraPos] // Copy array to avoid reference issues
+                    }));
+                    
+                    lastSentPosition = [...cameraPos];
+                    lastPositionUpdateTime = now;
+                }
             }
         }
 
-        // Send position updates periodically (optional - for viewer tracking)
-        setInterval(sendPositionUpdate, 1000); // Every second
+        // Send position updates more frequently but with smart throttling
+        setInterval(sendPositionUpdate, 50); // Check every 50ms, but throttle actual sends
+
+        function createRealUserOrb(userId, username, color, position) {
+            // Remove existing orb for this user if it exists (prevents duplicates)
+            removeRealUserOrb(userId);
+            
+            // Create new real user orb
+            const userOrb = new Orb(username, true, userId, color);
+            userOrb.updatePosition(position);
+            
+            // Add to both tracking systems
+            realUserOrbs.set(userId, userOrb);
+            orbs.push(userOrb);
+            
+            console.log(`Created orb for user ${username} (${userId}) at position`, position);
+            textAtlasNeedsUpdate = true; // Update atlas when new orb is added
+        }
+        
+        function updateRealUserOrb(userId, position) {
+            const userOrb = realUserOrbs.get(userId);
+            if (userOrb) {
+                userOrb.updatePosition(position);
+            } else {
+                console.warn(`Received position update for unknown user: ${userId}`);
+            }
+        }
+        
+        function removeRealUserOrb(userId) {
+            if (realUserOrbs.has(userId)) {
+                const userOrb = realUserOrbs.get(userId);
+                const index = orbs.indexOf(userOrb);
+                if (index > -1) {
+                    orbs.splice(index, 1);
+                }
+                realUserOrbs.delete(userId);
+                textAtlasNeedsUpdate = true; // Update atlas when orb is removed
+                console.log(`Removed orb for user: ${userId}`);
+            }
+        }
+        
+        function clearAllRealUserOrbs() {
+            // Clear all real user orbs (useful for reconnection cleanup)
+            realUserOrbs.forEach((userOrb, userId) => {
+                const index = orbs.indexOf(userOrb);
+                if (index > -1) {
+                    orbs.splice(index, 1);
+                }
+            });
+            realUserOrbs.clear();
+            textAtlasNeedsUpdate = true;
+            console.log('Cleared all real user orbs');
+        }
     </script>
 </body>
 </html>

@@ -323,6 +323,29 @@
             font-weight: bold;
         }
 
+        .got-it-button {
+            background: #c0c0c0;
+            color: black;
+            border: 2px outset #c0c0c0;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-family: 'MS Sans Serif', sans-serif;
+            cursor: pointer;
+            margin: 6px auto 0 auto;
+            display: block;
+            pointer-events: auto;
+            transition: none;
+        }
+
+        .got-it-button:hover {
+            background: #d0d0d0;
+        }
+
+        .got-it-button:active {
+            border: 2px inset #c0c0c0;
+            background: #b0b0b0;
+        }
+
         /* Auto-hide animation */
         @keyframes fadeOut {
             0% { opacity: 1; }
@@ -396,6 +419,7 @@
             Press <strong>F</strong> for smooth film mode (recording)<br>
             <strong>🎮 Gamepad:</strong> Left stick moves, triggers up/down, Y toggles film mode
         </div>
+        <button id="gotItButton" class="got-it-button">Got it!</button>
     </div>
     
     <img id="displacementMap" src="./displace.png" 
@@ -1077,24 +1101,44 @@ float getDist(vec3 samplePos, bool skipVideoPlane, vec3 cameraPos) {
             showBlueby();
         }
 
+        let bluebyTimeout = null; // Track the auto-hide timeout
+
+        function hideBlueby() {
+            const mascot = document.getElementById('mascot');
+            const chatBubble = document.getElementById('chatBubble');
+            
+            // Clear the auto-hide timeout if it exists
+            if (bluebyTimeout) {
+                clearTimeout(bluebyTimeout);
+                bluebyTimeout = null;
+            }
+            
+            // Hide mascot and chat bubble
+            mascot.classList.add('hide');
+            chatBubble.classList.add('hide');
+            
+            // Remove elements after fade out animation
+            setTimeout(() => {
+                mascot.style.display = 'none';
+                chatBubble.style.display = 'none';
+            }, 500);
+        }
+
         function showBlueby() {
             const mascot = document.getElementById('mascot');
             const chatBubble = document.getElementById('chatBubble');
+            const gotItButton = document.getElementById('gotItButton');
             
             // Show mascot and chat bubble
             mascot.classList.add('show');
             chatBubble.classList.add('show');
             
+            // Add click event listener to the "Got it!" button
+            gotItButton.addEventListener('click', hideBlueby);
+            
             // Auto-hide after 8 seconds
-            setTimeout(() => {
-                mascot.classList.add('hide');
-                chatBubble.classList.add('hide');
-                
-                // Remove elements after fade out animation
-                setTimeout(() => {
-                    mascot.style.display = 'none';
-                    chatBubble.style.display = 'none';
-                }, 500);
+            bluebyTimeout = setTimeout(() => {
+                hideBlueby();
             }, 8000);
         }
 

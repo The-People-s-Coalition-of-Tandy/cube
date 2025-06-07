@@ -1,0 +1,17 @@
+{
+  "ignore": [
+    "config.json",
+    "node_modules/",
+    ".git/",
+    "*.log"
+  ],
+  "watch": [
+    "server.js",
+    "public/"
+  ],
+  "ext": "js,html,css,glsl",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": "1000"
+} 
