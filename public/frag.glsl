@@ -81,10 +81,10 @@ bool isChromaKey(vec3 color) {
     float hardThreshold = uChromaThreshold * 0.7; // Fully transparent
     float softThreshold = uChromaThreshold * 1.3; // Fully opaque
     
-    // For pure black chroma key, use component-wise checking for better precision
+    // For pure black chroma key, use component-wise checking with better precision handling
     if (length(uChromaKeyColor) < 0.1) { // If chroma key color is close to black
         float maxComponent = max(max(color.r, color.g), color.b);
-        return maxComponent < uChromaThreshold;
+        return maxComponent < uChromaThreshold; // Use direct threshold, no soft falloff
     }
     
     return distance < hardThreshold;
@@ -98,15 +98,7 @@ float getChromaAlpha(vec3 color) {
     float hardThreshold = uChromaThreshold * 0.7;
     float softThreshold = uChromaThreshold * 1.3;
     
-    // For pure black chroma key, use component-wise checking
-    if (length(uChromaKeyColor) < 0.1) {
-        float maxComponent = max(max(color.r, color.g), color.b);
-        if (maxComponent < hardThreshold) return 0.0;
-        if (maxComponent > softThreshold) return 1.0;
-        return smoothstep(hardThreshold, softThreshold, maxComponent);
-    }
-    
-    // Standard distance-based keying with smooth falloff
+    // Standard distance-based keying with smooth falloff for all colors
     if (distance < hardThreshold) return 0.0;
     if (distance > softThreshold) return 1.0;
     return smoothstep(hardThreshold, softThreshold, distance);
@@ -170,7 +162,7 @@ float distVideoPlane(vec3 p) {
     // Create a sharp boundary exactly at the plane edges
     // Return a large distance if outside bounds
     if (abs(local.x) > planeSize.x || abs(local.y) > planeSize.y) {
-    return 100.0; // Large distance to prevent rendering outside plane bounds
+        return 100.0; // Large distance to prevent rendering outside plane bounds
     }
 
     return abs(local.z); // distance to z-plane
@@ -415,7 +407,7 @@ float calcShadow(vec3 origin, vec3 lightDir, Light light) {
                     uv.y = 1.0 - uv.y;
                     vec4 tex = safeTextureSample(iChannel1, uv);
         
-                    // Use alpha-based chroma key for consistent shadow behavior
+                    // Get chroma key alpha for smooth transparency
                     float chromaAlpha = getChromaAlpha(tex.rgb);
                     if (chromaAlpha > 0.1) { // Only block light if significantly opaque
                         return result * (1.0 - chromaAlpha); // Partial shadow based on alpha
@@ -524,21 +516,6 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
         // Get chroma key alpha for smooth transparency
         float chromaAlpha = getChromaAlpha(tex.rgb);
         
-        // If pixel is fully transparent, raymarch through to background
-        if (chromaAlpha < 0.01) {
-            // Pixel is transparent, raymarch through to background
-            vec3 deepPos = pos;
-            marchThroughField(deepPos, dir, eye, true);
-            
-            // Only render background if something was hit
-            if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
-                return calcLighting(deepPos, eye, light, material);
-            }
-            
-            // If nothing hit behind, return black/transparent
-            return vec4(0.0, 0.0, 0.0, 0.0);
-        }
-        
         // Calculate lighting for both front and back of the video plane
         float lightDist = length(light.position - pos);
         vec3 lightDir = normalize(light.position - pos);
@@ -559,26 +536,24 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
         // Use the stronger of front or back lighting
         float specular = max(frontSpecular, backSpecular);
         float diffuse = max(frontDiffuse, backDiffuse);
-        float ambient = 0.3; // Increased from 0.05 to maintain higher minimum brightness
+        float ambient = 0.05;
         
         float attenuation = min(1.0, 1.0/(lightDist/light.brightness));
         float shadow = calcShadow(pos, lightDir, light);
-        float occlusion = calcOcclusion(pos, frontNormal); // Using front normal for occlusion
+        float occlusion = calcOcclusion(pos, frontNormal);
         
-        // Apply lighting to the video texture with higher minimum brightness
-        vec4 litColor = light.color * tex * clamp(((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion), 0.4, 1.0);
+        // Apply lighting to the video texture
+        vec4 litColor = light.color * tex * clamp(((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion), 0.0, 1.0);
         
-        // Apply chroma key alpha for hardware-compatible transparency
-        litColor.a *= chromaAlpha;
-        
-        // If semi-transparent, blend with background
+        // Handle transparency with simple blending
         if (chromaAlpha < 0.99) {
-            vec3 deepPos = pos;
+            // Blend with background for semi-transparent pixels
+            vec3 deepPos = pos + dir * EPSILON * 2.0;
             marchThroughField(deepPos, dir, eye, true);
             
             if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
                 vec4 backgroundColor = calcLighting(deepPos, eye, light, material);
-                litColor = mix(backgroundColor, litColor, chromaAlpha);
+                return mix(backgroundColor, litColor, chromaAlpha);
             }
         }
         

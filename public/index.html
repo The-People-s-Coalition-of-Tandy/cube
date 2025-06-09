@@ -566,6 +566,7 @@
         let videoStarted = false;
         let audioFadeInterval;
         let audioContext;
+        let audioNodes; // Store audio nodes globally to prevent recreating them
         let isUsingFallback = false; // Track if we're using MP4 fallback
         let livestreamFailed = false; // Track if livestream failed
 
@@ -843,13 +844,14 @@
         }
 
         let bluebyTimeout = null; // Track the auto-hide timeout
+        let tutorialTimeouts = []; // Track all tutorial-related timeouts
         const tutorialMessages = [
-            "Hi! I'm Blueby, your guide to The Cube!",
-            "This is a 3D space where you can move around and interact with objects.",
-            "Use WASD keys to move around the space.",
-            "Click and drag to look around and explore.",
-            "Try clicking on objects to interact with them!",
-            "Have fun exploring The Cube!"
+            "Hi! I'm <b>Blueby</b>, your guide to <i>The Tandy Cube</i>...",
+            "You can use the <strong>WASD</strong> keys to move around the space.",
+            "Use the mouse to look around.",
+            "Use <strong>spacebar</strong> to fly up, and <strong>shift</strong> to fly down.",
+            "Press <strong>C</strong> to cycle camera modes.",
+            "Press <strong>/</strong> to open chat. Enjoy the show!"
         ];
         let currentMessageIndex = 0;
         let isTyping = false;
@@ -864,6 +866,14 @@
                 clearTimeout(bluebyTimeout);
                 bluebyTimeout = null;
             }
+            
+            // Clear all tutorial timeouts
+            tutorialTimeouts.forEach(timeout => clearTimeout(timeout));
+            tutorialTimeouts = [];
+            
+            // Stop any ongoing tutorial sequence
+            isTyping = false;
+            hideTypingIndicator();
             
             // Hide mascot, chat bubble, and overlay
             mascot.classList.remove('show');
@@ -915,7 +925,7 @@
             // Show typing for 1-2 seconds
             const typingDuration = 1000 + Math.random() * 1000;
             
-            setTimeout(() => {
+            const typingTimeout = setTimeout(() => {
                 hideTypingIndicator();
                 
                 const tutorialContainer = document.getElementById('tutorialMessages');
@@ -926,9 +936,10 @@
                 tutorialContainer.appendChild(messageDiv);
                 
                 // Trigger animation
-                setTimeout(() => {
+                const animationTimeout = setTimeout(() => {
                     messageDiv.classList.add('show');
                 }, 50);
+                tutorialTimeouts.push(animationTimeout);
                 
                 // Scroll to bottom if needed
                 tutorialContainer.scrollTop = tutorialContainer.scrollHeight;
@@ -936,27 +947,16 @@
                 currentMessageIndex++;
                 isTyping = false;
                 
-                // Schedule next message or show "Got it!" button
+                // Schedule next message
                 if (currentMessageIndex < tutorialMessages.length) {
-                    setTimeout(() => {
+                    const nextMessageTimeout = setTimeout(() => {
                         showNextMessage();
                     }, 1500); // Wait 1.5 seconds before next message
-                } else {
-                    // All messages sent, show "Got it!" button
-                    setTimeout(() => {
-                        const gotItButton = document.getElementById('gotItButton');
-                        gotItButton.style.display = 'block';
-                        gotItButton.style.opacity = '0';
-                        gotItButton.style.transform = 'translateY(10px)';
-                        gotItButton.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                        
-                        setTimeout(() => {
-                            gotItButton.style.opacity = '1';
-                            gotItButton.style.transform = 'translateY(0)';
-                        }, 50);
-                    }, 800);
+                    tutorialTimeouts.push(nextMessageTimeout);
                 }
+                // Button is always visible, so no need to show it after all messages
             }, typingDuration);
+            tutorialTimeouts.push(typingTimeout);
         }
 
         function showBlueby() {
@@ -970,29 +970,40 @@
             const overlay = document.getElementById('bluebyOverlay');
             const gotItButton = document.getElementById('gotItButton');
             
+            // Clear any existing tutorial timeouts
+            tutorialTimeouts.forEach(timeout => clearTimeout(timeout));
+            tutorialTimeouts = [];
+            
             // Reset tutorial state
             currentMessageIndex = 0;
             isTyping = false;
             const tutorialContainer = document.getElementById('tutorialMessages');
             tutorialContainer.innerHTML = '';
-            gotItButton.style.display = 'none';
             
             // Show overlay first, then mascot and chat bubble
             overlay.style.display = 'block';
             mascot.style.display = 'block';
             chatBubble.style.display = 'block';
             
+            // Always show the "Got it!" button and make it clickable
+            gotItButton.style.display = 'block';
+            gotItButton.style.opacity = '1';
+            gotItButton.style.transform = 'translateY(0)';
+            gotItButton.disabled = false;
+            
             // Trigger animations
-            setTimeout(() => {
+            const showTimeout = setTimeout(() => {
                 overlay.classList.add('show');
                 mascot.classList.add('show');
                 chatBubble.classList.add('show');
                 
                 // Start the tutorial sequence after the chat bubble appears
-                setTimeout(() => {
+                const startTimeout = setTimeout(() => {
                     showNextMessage();
                 }, 1000);
+                tutorialTimeouts.push(startTimeout);
             }, 50);
+            tutorialTimeouts.push(showTimeout);
             
             // Add click event listener to the "Got it!" button (remove any existing listeners)
             gotItButton.removeEventListener('click', hideBlueby);
@@ -1068,7 +1079,7 @@
         const date = document.getElementById('date');
         date.innerHTML = new Date().toLocaleDateString();
 
-        const video = document.getElementById('videoTexture');
+        // const video = document.getElementById('videoTexture'); // Removed duplicate - already declared above
         const playOverlay = document.getElementById('playOverlay');
         const passwordInput = document.getElementById('passwordInput');
         const enterButton = document.getElementById('enterButton');
@@ -1392,36 +1403,18 @@
         window.addEventListener('unload', cleanupHLS);
 
         function setupAudioContext() {
-            console.log('Setting up audio context...');
-            // Create audio context
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            console.log('Audio context state:', audioContext.state);
+            // Audio context is already initialized, just return the nodes
+            if (audioContext && audioNodes) {
+                console.log('Audio context already exists, reusing...');
+                return audioNodes;
+            }
             
-            // Create media element source from video
-            const source = audioContext.createMediaElementSource(video);
-            console.log('Created media element source');
-            
-            // Create gain node for volume control
-            const gainNode = audioContext.createGain();
-            
-            // Start with volume at 0
-            gainNode.gain.value = 0;
-            console.log('Initial gain value:', gainNode.gain.value);
-            
-            // Create analyzer node for visualizations (keep for future use but don't use it now)
-            const analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            
-            // Connect nodes: source -> gain -> analyser -> destination
-            source.connect(gainNode);
-            gainNode.connect(analyser);
-            analyser.connect(audioContext.destination);
-            console.log('Audio nodes connected');
-            
-            return { gainNode, analyser };
+            // Fallback - this shouldn't happen since we initialize immediately
+            console.log('Audio context not found, initializing...');
+            return initializeAudioContext();
         }
 
-        function fadeInAudio(audioNodes, duration = 3000) {
+        function fadeInAudio(audioNodes, duration = 800) {
             const { gainNode } = audioNodes;
             console.log('Starting audio fade in...');
             
@@ -1460,9 +1453,9 @@
         function startVideo() {
             if (!videoStarted) {
                 console.log('Starting video...');
-                // Unmute the video since user has interacted
-                video.muted = false;
-                console.log('Video unmuted');
+                // Keep video muted until audio context is set up
+                video.muted = true;
+                console.log('Video kept muted until audio context is ready');
                 
                 // Set up audio context BEFORE starting video
                 const audioNodes = setupAudioContext();
@@ -1476,17 +1469,18 @@
                 // Function to actually start video playback
                 const playVideo = () => {
                     video.play().then(() => {
-                        console.log('Video started playing');
+                        console.log('Video started playing (muted)');
                         videoStarted = true;
                         playOverlay.classList.add('hidden');
                         // Show canvas when playOverlay is hidden
                         document.getElementById('glCanvas').style.display = 'block';
                         
-                        // Wait for animation to reach halfway point before starting audio fade
+                        // Unmute video and start audio fade after delay
                         setTimeout(() => {
-                            console.log('Starting audio fade after delay...');
+                            console.log('Unmuting video and starting audio fade...');
+                            video.muted = false;
                             fadeInAudio(audioNodes);
-                        }, 1200); // Half of the 2.4s transition
+                        }, 100); // Reduced from 1200ms to 400ms for faster audio start
                         
                     }).catch(error => {
                         console.warn('Video playback failed:', error);
@@ -1684,14 +1678,35 @@
                             playOverlay.classList.add('hidden');
                             // Canvas is already shown from earlier fix
                             
-                            // Set up audio context and fade in audio
-                            const audioNodes = setupAudioContext();
+                            // Resume audio context if suspended (don't recreate it)
                             if (audioContext && audioContext.state === 'suspended') {
+                                console.log('Resuming suspended audio context...');
                                 audioContext.resume();
                             }
+                            
+                            // Use existing audio nodes if they exist, otherwise set them up
+                            if (!audioNodes) {
+                                console.log('Audio nodes not found, setting up audio context...');
+                                audioNodes = setupAudioContext();
+                            }
+                            
+                            // Ensure video is muted before starting fade
+                            if (!video.muted) {
+                                console.log('Video was unmuted, muting it before fade...');
+                                video.muted = true;
+                            }
+                            
+                            // Reset gain to 0 before starting fade
+                            if (audioNodes && audioNodes.gainNode) {
+                                audioNodes.gainNode.gain.value = 0;
+                                console.log('Reset gain to 0 before fade');
+                            }
+                            
                             setTimeout(() => {
+                                console.log('Unmuting video and starting audio fade with existing nodes...');
+                                video.muted = false;
                                 fadeInAudio(audioNodes);
-                            }, 1200);
+                            }, 400); // Reduced from 1200ms to 400ms for faster audio start
                         }
                         
                         // Show mascot after screen separation animation completes
@@ -3658,6 +3673,65 @@
             realUserOrbs.clear();
             textAtlasNeedsUpdate = true;
             console.log('Cleared all real user orbs');
+        }
+
+        const video = document.getElementById('videoTexture');
+        
+        // Set up audio context immediately to prevent race conditions
+        // This ensures Web Audio API takes control before any audio can play
+        
+        function initializeAudioContext() {
+            if (audioContext && audioNodes) {
+                console.log('Audio context already initialized');
+                return audioNodes;
+            }
+            
+            console.log('Initializing audio context immediately...');
+            // Create audio context
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('Audio context state:', audioContext.state);
+            
+            // Create media element source from video - this takes control of video audio
+            const source = audioContext.createMediaElementSource(video);
+            console.log('Created media element source - Web Audio API now controls video audio');
+            
+            // Create gain node for volume control
+            const gainNode = audioContext.createGain();
+            
+            // Start with volume at 0 to prevent any audio leakage
+            gainNode.gain.value = 0;
+            console.log('Initial gain value set to 0');
+            
+            // Create analyzer node for visualizations
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            
+            // Connect nodes: source -> gain -> analyser -> destination
+            source.connect(gainNode);
+            gainNode.connect(analyser);
+            analyser.connect(audioContext.destination);
+            console.log('Audio nodes connected');
+            
+            // Store nodes globally
+            audioNodes = { gainNode, analyser, source };
+            return audioNodes;
+        }
+        
+        // Initialize audio context immediately to take control of video audio
+        initializeAudioContext();
+
+        window.addEventListener('unload', cleanupHLS);
+
+        function setupAudioContext() {
+            // Audio context is already initialized, just return the nodes
+            if (audioContext && audioNodes) {
+                console.log('Audio context already exists, reusing...');
+                return audioNodes;
+            }
+            
+            // Fallback - this shouldn't happen since we initialize immediately
+            console.log('Audio context not found, initializing...');
+            return initializeAudioContext();
         }
     </script>
 </body>

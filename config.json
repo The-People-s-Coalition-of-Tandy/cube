@@ -1,5 +1,9 @@
 {
   "video": {
+    "m3u8Url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    "brightness": 1,
+    "contrast": 1,
+    "saturation": 1,
     "chromaKey": {
       "enabled": true,
       "color": [
@@ -7,7 +11,7 @@
         0,
         0
       ],
-      "threshold": 0.15
+      "threshold": 0.5
     }
   },
   "scene": {
@@ -26,7 +30,7 @@
       "brightness": 3
     }
   },
-  "lastUpdated": 1749311589770,
+  "lastUpdated": 1749319252504,
   "version": 1,
   "lighting": {
     "ambientIntensity": 0.7,

@@ -476,17 +476,18 @@ body #enterButton:active {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) translate(-140px, 0); /* Center and offset left for chat bubble */
+    transform: translate(-50%, -50%) translate(-140px, 0) scale(0.8); /* Center and offset left for chat bubble */
     width: 150px;
     height: auto;
     z-index: 1001;
     opacity: 0;
-    transition: opacity 0.5s ease-out 0.5s;
+    transition: opacity 0.5s ease, transform 0.5s ease;
     pointer-events: none;
 }
 
 #mascot.show {
     opacity: 1;
+    transform: translate(-50%, -50%) translate(-140px, 0) scale(1);
 }
 
 /* Modal overlay for blueby popup */
@@ -510,7 +511,7 @@ body #enterButton:active {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) translate(140px, 0) scale(0.8);
     width: 450px; /* Increased from 300px */
     background: #c0c0c0;
     border: 2px outset #c0c0c0;
@@ -519,6 +520,8 @@ body #enterButton:active {
     display: none;
     z-index: 10002;
     box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 #chatBubble.show {
@@ -530,7 +533,7 @@ body #enterButton:active {
     background: blue;
     color: white;
     padding: 2px 6px;
-    margin: -8px -8px 4px -8px;
+    /* margin: -8px -8px 4px -8px; */
     font-size: 11px;
     font-family: Arial Narrow, sans-serif;
     font-weight: bold;
@@ -543,6 +546,7 @@ body #enterButton:active {
     padding: 4px 8px 4px 4px;
     font-size: 14px;
     line-height: 1.5;
+    min-height: 160px;
 }
 
 #chatBubble .chat-content div {
@@ -736,7 +740,11 @@ body .cube-title {
     /* Mascot adjustments for mobile */
     #mascot {
         width: 120px;
-        transform: translate(-50%, -50%) translate(-100px, 0);
+        transform: translate(-50%, -50%) translate(-100px, 0) scale(0.8);
+    }
+    
+    #mascot.show {
+        transform: translate(-50%, -50%) translate(-100px, 0) scale(1);
     }
 
     /* Stream info adjustments */
@@ -818,19 +826,72 @@ body .cube-title {
         min-height: 44px; /* Minimum touch target size */
     }
 
+    #chatContainer {
+        width: calc(100vw - 20px);
+        height: 200px;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        margin: 0 10px 10px 10px;
+        position: fixed;
+        z-index: 1001;
+    }
+    
+    .chat-reminder {
+        bottom: 220px;
+        right: 20px;
+    }
+    
+    /* Make join button stick to bottom on mobile */
+    #joinButton {
+        position: fixed;
+        bottom: 60px; /* Move up to make room for message below */
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1002;
+        padding: 6px 16px;
+        font-size: 12px;
+        margin-top: 20px;
+        min-width: 180px;
+        font-family: 'MS Sans Serif', sans-serif;
+    }
+    
+    /* Make character message appear below join button, flush with bottom */
+    #characterMessage {
+        position: fixed;
+        bottom: 10px; /* Flush with bottom */
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1002;
+        margin-top: 0;
+        width: auto;
+        max-width: calc(100vw - 40px);
+        font-size: 12px; /* Slightly smaller for bottom placement */
+    }
+    
+    /* Add bottom padding to character form to account for fixed elements */
+    #characterForm {
+        padding-bottom: 140px; /* More space for button + message */
+    }
+    
     #chatBubble {
         width: 90%;
-        max-width: 400px; /* Increased from 280px */
+        max-width: 400px;
         font-size: 12px;
+        transform: translate(-50%, -50%) translate(0, 40px) scale(0.8);
     }
     
     #chatBubble.show {
-        transform: translate(-50%, -50%) translate(100px, 0) scale(1);
+        transform: translate(-50%, -50%) translate(0, 40px) scale(1);
     }
     
-    #chatBubble .chat-content {
-        font-size: 11px;
-        padding: 4px 6px 4px 4px;
+    #mascot {
+        width: 120px;
+        transform: translate(-50%, -50%) translate(0, -60px) scale(0.8);
+    }
+    
+    #mascot.show {
+        transform: translate(-50%, -50%) translate(0, -60px) scale(1);
     }
 }
 
@@ -899,8 +960,9 @@ body .cube-title {
 
     #chatBubble {
         width: 95%;
-        max-width: 350px; /* Increased from 280px */
-        font-size: 11px;
+        max-width: 350px;
+        font-size: 12px;
+        transform: translate(-50%, -50%) translate(0, 40px) scale(0.8);
     }
     
     #chatBubble.show {
@@ -918,7 +980,11 @@ body .cube-title {
 
     #mascot {
         width: 100px;
-        transform: translate(-50%, -50%) translate(0, -60px);
+        transform: translate(-50%, -50%) translate(0, -60px) scale(0.8);
+    }
+    
+    #mascot.show {
+        transform: translate(-50%, -50%) translate(0, -60px) scale(1);
     }
 
     body h1 {
@@ -1169,6 +1235,26 @@ body .cube-title {
     /* Add bottom padding to character form to account for fixed elements */
     #characterForm {
         padding-bottom: 140px; /* More space for button + message */
+    }
+    
+    #chatBubble {
+        width: 90%;
+        max-width: 400px;
+        font-size: 12px;
+        transform: translate(-50%, -50%) translate(0, 40px) scale(0.8);
+    }
+    
+    #chatBubble.show {
+        transform: translate(-50%, -50%) translate(0, 40px) scale(1);
+    }
+    
+    #mascot {
+        width: 120px;
+        transform: translate(-50%, -50%) translate(0, -60px) scale(0.8);
+    }
+    
+    #mascot.show {
+        transform: translate(-50%, -50%) translate(0, -60px) scale(1);
     }
 }
 
