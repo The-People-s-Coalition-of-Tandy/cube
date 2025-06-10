@@ -1,5 +1,4 @@
 precision highp float;
-
 // Hardware compatibility: Ensure consistent precision across different GPUs
 #ifdef GL_FRAGMENT_PRECISION_HIGH
     precision highp float;
@@ -35,6 +34,14 @@ uniform bool uChromaEnabled;     // Enable/disable chroma keying
 uniform vec2 uPlaneSize;
 uniform vec3 uPlanePosition;
 
+// Lighting system uniforms
+uniform vec3 uLightPositions[4];   // Positions of 4 lights
+uniform vec3 uLightColors[4];      // Colors of 4 lights
+uniform float uLightIntensities[4]; // Intensities of 4 lights
+uniform int uLightEffects[4];      // Effect types: 0=static, 1=spin, 2=strobe, 3=rainbow
+uniform int uActiveLightIndex;     // Currently active light (0-3)
+uniform bool uLightsEnabled[4];    // Which lights are enabled
+
 varying vec2 vTextureCoord;
 
 #define EPSILON .0001
@@ -50,7 +57,7 @@ varying vec2 vTextureCoord;
     #define MAX_VIEW_STEPS 200      // Full quality for desktop
     #define MAX_SHADOW_STEPS 32     // Full quality for desktop
     #define OCCLUSION_SAMPLES 4.0   // Full quality for desktop
-    #define MAX_ORBS 10             // Full orbs for desktop
+    #define MAX_ORBS 4            // Full orbs for desktop
 #endif
 
 #define OCCLUSION_FACTOR .5
@@ -58,7 +65,7 @@ varying vec2 vTextureCoord;
 #define BUMP_FACTOR .03
 #define TEX_SCALE_FACTOR .4
 #define ORB_RADIUS 0.1
-#define TEXT_BILLBOARD_SIZE vec2(0.1, 0.03) // Smaller billboards - width and height
+#define TEXT_BILLBOARD_SIZE vec2(0.15, 0.05)
 
 #define BOX_POS vec3(0.0, 0.0, 0.0)
 #define BOX_DIM vec3(1.0, 1.0, 1.0)
@@ -66,7 +73,7 @@ varying vec2 vTextureCoord;
 #define PEN_FACTOR 50.0
 #define MAT_COLOR vec4(1.0)
 #define MAT_GLOSS 1.0
-// #define PLANE_SIZE vec2(uPlaneSize * (16./9.), uPlaneSize)
+
 
 
 // Configurable chroma key function - returns true if color should be keyed out (transparent)
@@ -108,7 +115,9 @@ float getChromaAlpha(vec3 color) {
 bool isBlackChromaKey(vec3 color) {
     // For text backgrounds, we still use black keying
     float threshold = 0.5;
-    return (color.r < threshold && color.g < threshold && color.b < threshold);
+
+    float distance = length(color - vec3(0.0, 0.0, 0.0));
+    return distance < threshold;
 }
 
 // Safe texture sampling function that prevents edge stretching
@@ -555,7 +564,7 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
         // Use the stronger of front or back lighting
         float specular = max(frontSpecular, backSpecular);
         float diffuse = max(frontDiffuse, backDiffuse);
-        float ambient = 0.15; // Increased ambient light for better visibility of back side
+        float ambient = 0.3; // Increased from 0.15 to match orbworks.html
         
         float attenuation = min(1.0, 1.0/(lightDist/light.brightness));
         float shadow = calcShadow(pos, lightDir, light);
@@ -565,7 +574,7 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
         // Ensure minimum lighting so back side is never completely black
         float minLighting = 0.2; // Minimum lighting level to prevent complete darkness
         float lightingFactor = max(minLighting, ((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion));
-        vec4 litColor = light.color * tex * clamp(lightingFactor, 0.0, 1.0);
+        vec4 litColor = light.color * tex * clamp(lightingFactor, 0.4, 1.0); // Changed minimum from 0.0 to 0.4
         
         // Handle transparency with simple blending
         if (chromaAlpha < 0.99) {
@@ -600,10 +609,58 @@ void main() {
     }
     eye = vec3(pos);
     
+    // Create dynamic light based on active light settings
+    vec3 lightPos = vec3(3.0, 3.5, 3.0);
+    vec3 lightColor = vec3(1.0, 1.0, 1.0);
+    float lightIntensity = 3.0;
+    int lightEffect = 0;
+    
+    // Use conditional statements to select the active light (WebGL 1.0 compatible)
+    if (uActiveLightIndex == 0) {
+        lightPos = uLightPositions[0];
+        lightColor = uLightColors[0];
+        lightIntensity = uLightIntensities[0];
+        lightEffect = uLightEffects[0];
+    } else if (uActiveLightIndex == 1) {
+        lightPos = uLightPositions[1];
+        lightColor = uLightColors[1];
+        lightIntensity = uLightIntensities[1];
+        lightEffect = uLightEffects[1];
+    } else if (uActiveLightIndex == 2) {
+        lightPos = uLightPositions[2];
+        lightColor = uLightColors[2];
+        lightIntensity = uLightIntensities[2];
+        lightEffect = uLightEffects[2];
+    } else if (uActiveLightIndex == 3) {
+        lightPos = uLightPositions[3];
+        lightColor = uLightColors[3];
+        lightIntensity = uLightIntensities[3];
+        lightEffect = uLightEffects[3];
+    }
+    
+    // Apply light effects
+    if (lightEffect == 1) { // SPIN
+        float angle = iTime * 1.3;
+        lightPos = vec3(
+            3.0 * cos(angle),
+            lightPos.y,
+            3.0 * sin(angle)
+        );
+    } else if (lightEffect == 2) { // STROBE
+        float strobe = step(0.5, fract(iTime * 4.0));
+        lightIntensity *= strobe;
+    } else if (lightEffect == 3) { // RAINBOW
+        lightColor = vec3(
+            0.5 + 0.5 * sin(iTime * 2.0),
+            0.5 + 0.5 * sin(iTime * 2.0 + 2.094),
+            0.5 + 0.5 * sin(iTime * 2.0 + 4.188)
+        );
+    }
+    
     Light light = Light(
-        vec3(3.0*sin(iTime+1.3), 3.5, 3.0*cos(iTime+1.3)),
-        LIGHT_COLOR,
-        3.0,
+        lightPos,
+        vec4(lightColor, 1.0),
+        lightIntensity,
         PEN_FACTOR
     );
     Material mat = Material(MAT_COLOR, MAT_GLOSS);

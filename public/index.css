@@ -1089,46 +1089,48 @@ body .cube-title {
     padding: 0;
     background: transparent;
     border: none;
-    display: flex;
+    display: none; /* Hidden by default until tutorial is complete */
     gap: 4px;
     pointer-events: auto;
     margin-top: 4px;
 }
 
+#chatInputContainer.tutorial-complete {
+    display: flex; /* Show after tutorial is complete */
+}
+
 #chatInput {
     flex: 1;
-    border: none;
     padding: 4px 6px;
-    font-family: 'MS Sans Serif', sans-serif;
     font-size: 16px; /* Increased from 11px to prevent iOS auto-zoom */
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.6);
+
+    /* background: lightgray; */
     color: white;
-    border-radius: 2px;
+    border: 2px inset gray;
     outline: none;
 }
 
 #chatInput::placeholder {
-    color: rgba(255, 255, 255, 0.9);
+    /* color: rgba(0, 0, 0, 0.9); */
     font-style: italic;
 }
 
 #chatSend {
-    background: rgba(0, 0, 0, 0.4);
-    border: none;
-    padding: 4px 8px;
-    font-family: 'MS Sans Serif', sans-serif;
-    font-size: 11px;
+    /* background: gray; */
     cursor: pointer;
-    color: white;
-    border-radius: 2px;
+    /* border: 2px outset gray; */
+    border-radius: 0px;
+
+    color: black;
 }
 
 #chatSend:hover {
-    background: rgba(0, 0, 0, 0.6);
+    /* background: rgba(0, 0, 0, 0.6); */
 }
 
 #chatSend:active {
-    background: rgba(0, 0, 0, 0.8);
+    /* background: rgba(0, 0, 0, 0.8); */
 }
 
 .chat-message {
@@ -2004,8 +2006,6 @@ Mobile responsive orb cubes:
     color: black;
     font-size: 12px;
     outline: none;
-    border-radius: 0;
-    font-family: 'MS Sans Serif', sans-serif;
 }
 
 .tutorial-submit {

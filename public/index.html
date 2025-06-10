@@ -73,6 +73,65 @@
         #characterSelection {
             display: none !important;
         }
+        
+        /* Lighting Board Styles */
+        #lightingBoard.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        #lightingBoardToggle.hidden {
+            display: none;
+        }
+
+        .light-btn, .color-btn, .effect-btn {
+            background: #333;
+            color: #888;
+            border: 1px solid #555;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .light-btn.active, .color-btn.active, .effect-btn.active {
+            background: #00ff00;
+            color: #000;
+            border-color: #00ff00;
+        }
+
+        .light-btn:hover, .color-btn:hover, .effect-btn:hover {
+            background: #444;
+        }
+
+        .light-btn.active:hover, .color-btn.active:hover, .effect-btn.active:hover {
+            background: #00cc00;
+        }
+        
+        .color-btn {
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .effect-btn {
+            font-size: 10px;
+        }
+        
+        #lightingBoard.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+            z-index: 9999999;
+        }
+        
+        #lightingBoardToggle.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -213,6 +272,12 @@
         </div>
     </div>
     
+    <!-- Lighting Board -->
+    <!-- REMOVED: Lighting board moved to admin panel -->
+    
+    <!-- Lighting Board Toggle Button (always visible) -->
+    <!-- REMOVED: Lighting board toggle moved to admin panel -->
+
     <!-- Mascot and chat bubble with modal overlay -->
     <div id="bluebyOverlay"></div>
     <img id="mascot" src="./assets/blueby6.png" alt="Mascot">
@@ -254,7 +319,7 @@
     <div id="chatContainer">
         <div id="chatMessages"></div>
         <div id="chatInputContainer">
-            <input type="text" id="chatInput" placeholder="Press / to chat" maxlength="200">
+            <input type="text" id="chatInput" placeholder="Press / to chat" maxlength="200" autocomplete="off">
             <button id="chatSend">Send</button>
         </div>
     </div>
@@ -347,6 +412,12 @@
                 // Merge brightness if present
                 if (config.brightness !== undefined) {
                     mergedConfig.brightness = config.brightness;
+                }
+                
+                // Merge scene settings (including lighting) if present
+                if (config.scene) {
+                    if (!mergedConfig.scene) mergedConfig.scene = {};
+                    Object.assign(mergedConfig.scene, config.scene);
                 }
                 
                 console.log('✅ Final merged configuration:', mergedConfig);
@@ -478,6 +549,19 @@
                         gl.uniform1f(brightnessLocation, brightness);
                         console.log('✅ Applied brightness:', brightness);
                     }
+                }
+                
+                // Apply lighting settings
+                if (config.scene && config.scene.lighting) {
+                    const lighting = config.scene.lighting;
+                    if (lighting.lights) {
+                        lightingSystem.lights = lighting.lights;
+                    }
+                    if (lighting.activeLightIndex !== undefined) {
+                        lightingSystem.activeLightIndex = lighting.activeLightIndex;
+                    }
+                    updateLightingUniforms();
+                    console.log('✅ Applied lighting configuration:', lighting);
                 }
                 
                 console.log('🎨 Shader uniforms updated successfully');
@@ -636,7 +720,7 @@
         const MOBILE_PERFORMANCE_MODE = isMobile;
         const MOBILE_RESOLUTION_SCALE = 0.6; // Render at 60% resolution on mobile
         const MOBILE_MAX_ORBS = 0; // No orbs on mobile for better performance
-        const DESKTOP_MAX_ORBS = 100; // Keep full orbs on desktop
+        const DESKTOP_MAX_ORBS = 6; // Keep full orbs on desktop
         
         let cameraMode = isMobile ? 0 : 1; // Start with polar on mobile, free-fly on desktop
         const CAMERA_MODES = ['polar', 'free-fly', 'look-at'];
@@ -876,6 +960,16 @@
             }, 1000);
         }
 
+        // Fallback to ensure chat is always available after a reasonable time
+        // This handles edge cases where tutorial might not complete properly
+        setTimeout(() => {
+            const chatInputContainer = document.getElementById('chatInputContainer');
+            if (!chatInputContainer.classList.contains('tutorial-complete')) {
+                console.log('Fallback: Enabling chat input after timeout');
+                chatInputContainer.classList.add('tutorial-complete');
+            }
+        }, 30000); // 30 seconds fallback
+
         let bluebyTimeout = null; // Track the auto-hide timeout
         let tutorialTimeouts = []; // Track all tutorial-related timeouts
         let tutorialSelectedColor = null;
@@ -945,6 +1039,10 @@
                 // Enable controls now that user has joined
                 hasJoinedCube = true;
                 
+                // Enable chat input since user is joining (bypassing tutorial)
+                const chatInputContainer = document.getElementById('chatInputContainer');
+                chatInputContainer.classList.add('tutorial-complete');
+                
                 // Connect to WebSocket with user data
                 connectWebSocketWithUserData(username, selectedColor);
                 
@@ -1003,6 +1101,10 @@
                 inputSection.style.display = 'none';
                 inputSection.classList.remove('show');
                 document.getElementById('tutorialColorPicker').style.display = 'none';
+                
+                // Show the chat input now that tutorial is complete
+                const chatInputContainer = document.getElementById('chatInputContainer');
+                chatInputContainer.classList.add('tutorial-complete');
             }, 500);
         }
 
@@ -1108,6 +1210,8 @@
                 // Trigger animation
                 const animationTimeout = setTimeout(() => {
                     messageDiv.classList.add('show');
+                    // Play notification sound when Blueby's message appears
+                    playNotificationSound();
                 }, 50);
                 tutorialTimeouts.push(animationTimeout);
                 
@@ -1153,6 +1257,9 @@
         function showBlueby() {
             // Don't show mascot on mobile devices since camera controls don't apply
             if (isMobile) {
+                // Enable chat input immediately for mobile users since tutorial won't run
+                const chatInputContainer = document.getElementById('chatInputContainer');
+                chatInputContainer.classList.add('tutorial-complete');
                 return;
             }
             
@@ -1817,6 +1924,20 @@
             // Show the canvas immediately to prevent flashing
             document.getElementById('glCanvas').style.display = 'block';
             
+            // Initialize video system immediately on user interaction (required for Chrome)
+            if (!videoStarted) {
+                console.log('Initializing video on user interaction for Chrome compatibility...');
+                initializeVideo();
+                
+                // Start video playback immediately after initialization
+                setTimeout(() => {
+                    if (!videoStarted) {
+                        console.log('Starting video playback after initialization...');
+                        startVideo();
+                    }
+                }, 100); // Small delay to allow initialization to complete
+            }
+            
             // Initialize and prepare audio
             const audioNodes = setupAudioContext();
             
@@ -2067,6 +2188,14 @@
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
+            // Skip tutorial with '[' key (for debugging)
+            if (e.key === '[') {
+                console.log('Skipping Blueby tutorial (debug mode)');
+                hideBlueby();
+                e.preventDefault();
+                return;
+            }
+            
             // Don't process any controls until user has joined the cube
             if (!hasJoinedCube) {
                 return;
@@ -2534,15 +2663,15 @@
 
         // Orb management
         const MAX_ORBS = MOBILE_PERFORMANCE_MODE ? MOBILE_MAX_ORBS : DESKTOP_MAX_ORBS; // Mobile gets 0 orbs, desktop gets 100
-        const MAX_ORB_SIZE = 0.5; // Maximum orb radius - adjust this to change biggest orb size
-        const ORB_LIFETIME = 30000; // 30 seconds lifetime for each orb (increased from 10s)
-        const SPAWN_INTERVAL = 4000; // 4 seconds between spawns (increased from 3s)
+        const MAX_ORB_SIZE = 0.9; // Maximum orb radius - adjust this to change biggest orb size
+        const FIXED_BOT_COUNT = Math.min(MAX_ORBS, 20); // Fixed number of bot orbs (max 20 or MAX_ORBS if smaller)
+        const SPAWN_INTERVAL = 4000; // 4 seconds between management checks
         let orbs = [];
         let realUserOrbs = new Map(); // Track real user orbs separately
+        let botOrbsInitialized = false; // Track if we've created the initial bot orbs
 
         const RANDOM_NAMES = [
-            "umru", "ryjelsum", "qui.et", "lost_in_the_loop", "npnc", "theresa_sweetheart", 
-            "edude92", "tristan", "Crenchwater", "erowidfan", "ButitsAlex"
+            "signon", "philipGlass", "opusImp3tus", "meaningful", "musicattractive", "blueby"
         ];
 
         let usedNames = new Set(); // Track used names to ensure uniqueness
@@ -2561,6 +2690,60 @@
             const selectedName = availableNames[Math.floor(Math.random() * availableNames.length)];
             usedNames.add(selectedName);
             return selectedName;
+        }
+
+        function createInitialBotOrbs() {
+            if (botOrbsInitialized || MOBILE_PERFORMANCE_MODE) return;
+            
+            console.log(`Creating ${FIXED_BOT_COUNT} initial bot orbs...`);
+            for (let i = 0; i < FIXED_BOT_COUNT; i++) {
+                const botOrb = new Orb(getRandomName(), false);
+                orbs.push(botOrb);
+            }
+            botOrbsInitialized = true;
+            console.log(`Created ${FIXED_BOT_COUNT} bot orbs`);
+        }
+
+        function replaceBotWithUser(userId, username, color, position) {
+            // Find a bot orb to replace
+            const botOrbIndex = orbs.findIndex(orb => !orb.isRealUser);
+            
+            if (botOrbIndex !== -1) {
+                // Remove the bot orb
+                const botOrb = orbs[botOrbIndex];
+                usedNames.delete(botOrb.name); // Free up the bot's name
+                orbs.splice(botOrbIndex, 1);
+                console.log(`Replaced bot orb "${botOrb.name}" with user "${username}"`);
+            }
+            
+            // Create the real user orb
+            const userOrb = new Orb(username, true, userId, color);
+            userOrb.updatePosition(position);
+            
+            // Add to both tracking systems
+            realUserOrbs.set(userId, userOrb);
+            orbs.push(userOrb);
+            
+            console.log(`Created orb for user ${username} (${userId}) at position`, position);
+            textAtlasNeedsUpdate = true;
+        }
+
+        function replaceUserWithBot(userId) {
+            if (realUserOrbs.has(userId)) {
+                const userOrb = realUserOrbs.get(userId);
+                const index = orbs.indexOf(userOrb);
+                if (index > -1) {
+                    orbs.splice(index, 1);
+                }
+                realUserOrbs.delete(userId);
+                
+                // Create a new bot orb to replace the user
+                const botOrb = new Orb(getRandomName(), false);
+                orbs.push(botOrb);
+                
+                console.log(`Replaced user orb with bot orb "${botOrb.name}"`);
+                textAtlasNeedsUpdate = true;
+            }
         }
 
         class Orb {
@@ -3016,33 +3199,31 @@
                 return;
             }
             
-            const now = Date.now();
+            // Create initial bot orbs if not done yet
+            if (!botOrbsInitialized) {
+                createInitialBotOrbs();
+            }
             
-            // Filter out expired AI orbs only (real user orbs don't expire)
-            orbs = orbs.filter(orb => {
-                if (orb.isRealUser) {
-                    return true; // Keep all real user orbs
-                }
-                
-                const alive = (now - orb.createdAt) < ORB_LIFETIME;
-                if (!alive) {
-                    orb.removeLabel && orb.removeLabel();
-                    // Remove from usedNames if it was an AI orb
-                    usedNames.delete(orb.name);
-                }
-                return alive;
-            });
-
-            // Count AI orbs and real user orbs separately
-            const aiOrbs = orbs.filter(orb => !orb.isRealUser);
+            // Count current orbs
+            const botOrbs = orbs.filter(orb => !orb.isRealUser);
             const realUserOrbCount = orbs.filter(orb => orb.isRealUser).length;
+            const totalDesiredOrbs = FIXED_BOT_COUNT + realUserOrbCount;
             
-            // Only spawn AI orbs if we have room (prioritize real users)
-            const maxAiOrbs = Math.max(0, MAX_ORBS - realUserOrbCount);
-            if (aiOrbs.length < maxAiOrbs) {
-                const newAiOrb = new Orb(getRandomName(), false);
-                orbs.push(newAiOrb);
-                console.log(`Spawned AI orb: ${newAiOrb.name} (AI: ${aiOrbs.length + 1}, Real: ${realUserOrbCount})`);
+            // Ensure we maintain the right number of bot orbs
+            // (This handles edge cases where bot orbs might get lost)
+            const expectedBotCount = Math.max(0, FIXED_BOT_COUNT - realUserOrbCount);
+            if (botOrbs.length < expectedBotCount) {
+                const orbsToAdd = expectedBotCount - botOrbs.length;
+                console.log(`Adding ${orbsToAdd} bot orbs to maintain fixed count`);
+                for (let i = 0; i < orbsToAdd; i++) {
+                    const botOrb = new Orb(getRandomName(), false);
+                    orbs.push(botOrb);
+                }
+            }
+            
+            // Log current state periodically
+            if (Math.random() < 0.1) { // 10% chance to log (every ~40 seconds on average)
+                console.log(`Orb status: ${botOrbs.length} bots, ${realUserOrbCount} real users, ${orbs.length} total`);
             }
 
             setTimeout(manageOrbs, SPAWN_INTERVAL);
@@ -3156,6 +3337,9 @@
                 gl.uniform1i(uniformLocations.uUsePolarCamera, usePolarCamera ? 1 : 0);
                 gl.uniform2f(uniformLocations.uPolarRotation, polarPitch, polarRotation);
                 gl.uniform1f(uniformLocations.uPolarDistance, polarDistance);
+
+                // Update lighting uniforms
+                updateLightingUniforms();
 
                 // Skip orb and text uniforms on mobile for better performance
                 if (!MOBILE_PERFORMANCE_MODE) {
@@ -3276,7 +3460,14 @@
                 // Chroma key uniforms
                 uChromaKeyColor: gl.getUniformLocation(program, 'uChromaKeyColor'),
                 uChromaThreshold: gl.getUniformLocation(program, 'uChromaThreshold'),
-                uChromaEnabled: gl.getUniformLocation(program, 'uChromaEnabled')
+                uChromaEnabled: gl.getUniformLocation(program, 'uChromaEnabled'),
+                // Lighting system uniforms
+                uLightPositions: gl.getUniformLocation(program, 'uLightPositions'),
+                uLightColors: gl.getUniformLocation(program, 'uLightColors'),
+                uLightIntensities: gl.getUniformLocation(program, 'uLightIntensities'),
+                uLightEffects: gl.getUniformLocation(program, 'uLightEffects'),
+                uActiveLightIndex: gl.getUniformLocation(program, 'uActiveLightIndex'),
+                uLightsEnabled: gl.getUniformLocation(program, 'uLightsEnabled')
             };
             console.log('✅ Cached uniform locations for performance (including chroma key)');
         }
@@ -3779,6 +3970,11 @@
                     applyConfiguration(data.config);
                     break;
                     
+                case 'lighting_update':
+                    console.log('💡 Received lighting update:', data.lighting);
+                    applyLightingUpdate(data.lighting);
+                    break;
+                    
                 default:
                     console.log('Unknown message type:', data.type);
             }
@@ -3950,16 +4146,8 @@
             // Remove existing orb for this user if it exists (prevents duplicates)
             removeRealUserOrb(userId);
             
-            // Create new real user orb
-            const userOrb = new Orb(username, true, userId, color);
-            userOrb.updatePosition(position);
-            
-            // Add to both tracking systems
-            realUserOrbs.set(userId, userOrb);
-            orbs.push(userOrb);
-            
-            console.log(`Created orb for user ${username} (${userId}) at position`, position);
-            textAtlasNeedsUpdate = true; // Update atlas when new orb is added
+            // Use the new replacement system
+            replaceBotWithUser(userId, username, color, position);
         }
         
         function updateRealUserOrb(userId, position) {
@@ -3972,29 +4160,17 @@
         }
         
         function removeRealUserOrb(userId) {
-            if (realUserOrbs.has(userId)) {
-                const userOrb = realUserOrbs.get(userId);
-                const index = orbs.indexOf(userOrb);
-                if (index > -1) {
-                    orbs.splice(index, 1);
-                }
-                realUserOrbs.delete(userId);
-                textAtlasNeedsUpdate = true; // Update atlas when orb is removed
-                console.log(`Removed orb for user: ${userId}`);
-            }
+            // Use the new replacement system
+            replaceUserWithBot(userId);
         }
         
         function clearAllRealUserOrbs() {
-            // Clear all real user orbs (useful for reconnection cleanup)
-            realUserOrbs.forEach((userOrb, userId) => {
-                const index = orbs.indexOf(userOrb);
-                if (index > -1) {
-                    orbs.splice(index, 1);
-                }
+            // Clear all real user orbs and replace them with bots
+            const userIds = Array.from(realUserOrbs.keys());
+            userIds.forEach(userId => {
+                replaceUserWithBot(userId);
             });
-            realUserOrbs.clear();
-            textAtlasNeedsUpdate = true;
-            console.log('Cleared all real user orbs');
+            console.log('Cleared all real user orbs and replaced with bots');
         }
 
         const video = document.getElementById('videoTexture');
@@ -4055,6 +4231,94 @@
             console.log('Audio context not found, initializing...');
             return initializeAudioContext();
         }
+        
+        // Lighting Board System
+        let lightingSystem = {
+            lights: [
+                { position: [3.0, 3.5, 3.0], color: [1.0, 1.0, 1.0], intensity: 3.0, effect: 1, enabled: true },
+                { position: [-3.0, 3.5, 3.0], color: [1.0, 0.0, 0.0], intensity: 2.5, effect: 0, enabled: false },
+                { position: [0.0, 5.0, -3.0], color: [0.0, 1.0, 0.0], intensity: 2.0, effect: 0, enabled: false },
+                { position: [3.0, 2.0, -3.0], color: [0.0, 0.0, 1.0], intensity: 2.5, effect: 0, enabled: false }
+            ],
+            activeLightIndex: 0,
+            boardVisible: false
+        };
+        
+
+        function updateLightingUniforms() {
+            if (!gl || !program || !uniformLocations) return;
+            
+            // Prepare arrays for uniforms
+            const positions = new Float32Array(12); // 4 lights * 3 components
+            const colors = new Float32Array(12);    // 4 lights * 3 components
+            const intensities = new Float32Array(4);
+            const effects = new Int32Array(4);
+            const enabled = new Int32Array(4);
+            
+            lightingSystem.lights.forEach((light, index) => {
+                positions[index * 3] = light.position[0];
+                positions[index * 3 + 1] = light.position[1];
+                positions[index * 3 + 2] = light.position[2];
+                
+                colors[index * 3] = light.color[0];
+                colors[index * 3 + 1] = light.color[1];
+                colors[index * 3 + 2] = light.color[2];
+                
+                intensities[index] = light.intensity;
+                effects[index] = light.effect;
+                enabled[index] = light.enabled ? 1 : 0;
+            });
+            
+            // Update uniforms
+            gl.uniform3fv(uniformLocations.uLightPositions, positions);
+            gl.uniform3fv(uniformLocations.uLightColors, colors);
+            gl.uniform1fv(uniformLocations.uLightIntensities, intensities);
+            gl.uniform1iv(uniformLocations.uLightEffects, effects);
+            gl.uniform1i(uniformLocations.uActiveLightIndex, lightingSystem.activeLightIndex);
+            
+            // Convert boolean array to int array for WebGL
+            const enabledArray = lightingSystem.lights.map(light => light.enabled ? 1 : 0);
+            gl.uniform1iv(uniformLocations.uLightsEnabled, new Int32Array(enabledArray));
+        }
+
+        // Handle lighting updates from admin panel via WebSocket
+        function applyLightingUpdate(lightingData) {
+            if (lightingData.lights) {
+                lightingSystem.lights = lightingData.lights;
+            }
+            if (lightingData.activeLightIndex !== undefined) {
+                lightingSystem.activeLightIndex = lightingData.activeLightIndex;
+            }
+            
+            // Update shader uniforms
+            updateLightingUniforms();
+            
+            console.log('Lighting updated from admin panel:', lightingData);
+        }
+
+        // Chat notification sound function
+        function playNotificationSound() {
+            try {
+                // Create and play the notification sound from audio file
+                const audio = new Audio('./assets/notif.wav');
+                audio.volume = 0.7; // Set volume to 70% to be more audible
+                audio.play().catch(error => {
+                    console.log('Could not play notification sound:', error);
+                });
+            } catch (error) {
+                console.log('Could not play notification sound:', error);
+            }
+        }
+
+        // Fallback to ensure chat is always available after a reasonable time
+        // This handles edge cases where tutorial might not complete properly
+        setTimeout(() => {
+            const chatInputContainer = document.getElementById('chatInputContainer');
+            if (!chatInputContainer.classList.contains('tutorial-complete')) {
+                console.log('Fallback: Enabling chat input after timeout');
+                chatInputContainer.classList.add('tutorial-complete');
+            }
+        }, 30000); // 30 seconds fallback
     </script>
 </body>
 </html>

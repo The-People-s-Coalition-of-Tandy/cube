@@ -335,7 +335,7 @@ wss.on('connection', (ws) => {
   });
   
   // Handle incoming messages
-  ws.on('message', (message) => {
+  ws.on('message', async (message) => {
     try {
       stats.messagesReceived++;
       const data = JSON.parse(message);
@@ -408,6 +408,40 @@ wss.on('connection', (ws) => {
             type: 'config_update',
             config: data.config,
             updatedBy: 'admin_realtime',
+            timestamp: Date.now()
+          });
+        }
+      } else if (data.type === 'lighting_update') {
+        // Handle lighting updates from admin panel
+        if (data.lighting) {
+          console.log('💡 Broadcasting lighting update:', data.lighting);
+          
+          // Save lighting configuration to config file
+          try {
+            const currentConfig = configManager.getConfig();
+            if (!currentConfig.scene) {
+              currentConfig.scene = {};
+            }
+            if (!currentConfig.scene.lighting) {
+              currentConfig.scene.lighting = {};
+            }
+            
+            // Update the lighting configuration
+            currentConfig.scene.lighting.lights = data.lighting.lights;
+            currentConfig.scene.lighting.activeLightIndex = data.lighting.activeLightIndex;
+            
+            // Save the updated configuration
+            await configManager.saveConfig();
+            console.log('💡 Lighting configuration saved to config file');
+          } catch (error) {
+            console.error('Error saving lighting configuration:', error);
+          }
+          
+          // Broadcast lighting update to all viewers (for immediate visual updates)
+          broadcastToAll({
+            type: 'lighting_update',
+            lighting: data.lighting,
+            updatedBy: 'admin',
             timestamp: Date.now()
           });
         }

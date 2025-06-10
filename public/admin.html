@@ -531,6 +531,113 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Lighting Control -->
+            <div class="control-panel">
+                <h3>💡 Lighting Control</h3>
+                
+                <!-- Light Selection -->
+                <div class="form-group">
+                    <label>Active Light</label>
+                    <div id="lightButtons" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px;">
+                        <button class="preset-btn light-btn active" data-light="0">Light 1</button>
+                        <button class="preset-btn light-btn" data-light="1">Light 2</button>
+                        <button class="preset-btn light-btn" data-light="2">Light 3</button>
+                        <button class="preset-btn light-btn" data-light="3">Light 4</button>
+                    </div>
+                </div>
+                
+                <!-- Color Controls -->
+                <div class="form-group">
+                    <label>Color Presets</label>
+                    <div id="colorButtons" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px;">
+                        <button class="preset-btn color-btn" data-color="#ff0000" style="background: #ff0000; color: white;">Red</button>
+                        <button class="preset-btn color-btn" data-color="#00ff00" style="background: #00ff00; color: black;">Green</button>
+                        <button class="preset-btn color-btn" data-color="#0000ff" style="background: #0000ff; color: white;">Blue</button>
+                        <button class="preset-btn color-btn active" data-color="#ffffff" style="background: #ffffff; color: black;">White</button>
+                        <button class="preset-btn color-btn" data-color="#ffff00" style="background: #ffff00; color: black;">Yellow</button>
+                        <button class="preset-btn color-btn" data-color="#ff00ff" style="background: #ff00ff; color: white;">Magenta</button>
+                        <button class="preset-btn color-btn" data-color="#00ffff" style="background: #00ffff; color: black;">Cyan</button>
+                        <button class="preset-btn color-btn" data-color="#ff8000" style="background: #ff8000; color: white;">Orange</button>
+                    </div>
+                </div>
+                
+                <!-- Custom Color -->
+                <div class="form-group">
+                    <label>Custom Color (RGB 0-1)</label>
+                    <div class="color-input-group">
+                        <input type="number" id="lightColorR" min="0" max="1" step="0.1" value="1" placeholder="Red">
+                        <input type="number" id="lightColorG" min="0" max="1" step="0.1" value="1" placeholder="Green">
+                        <input type="number" id="lightColorB" min="0" max="1" step="0.1" value="1" placeholder="Blue">
+                    </div>
+                </div>
+                
+                <!-- Effect Controls -->
+                <div class="form-group">
+                    <label>Light Effects</label>
+                    <div id="effectButtons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
+                        <button class="preset-btn effect-btn active" data-effect="static">Static</button>
+                        <button class="preset-btn effect-btn" data-effect="spin">Spin</button>
+                        <button class="preset-btn effect-btn" data-effect="strobe">Strobe</button>
+                        <button class="preset-btn effect-btn" data-effect="rainbow">Rainbow</button>
+                    </div>
+                </div>
+                
+                <!-- Intensity Control -->
+                <div class="form-group">
+                    <label for="lightIntensity">Intensity</label>
+                    <div class="range-group">
+                        <input type="range" id="lightIntensity" min="0" max="100" step="5" value="100">
+                        <div class="range-controls">
+                            <button class="range-arrow" onclick="decreaseLightIntensity()">-</button>
+                            <input type="text" class="range-value-input" id="lightIntensityValue" value="100%">
+                            <button class="range-arrow" onclick="increaseLightIntensity()">+</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Position Controls -->
+                <div class="form-group">
+                    <label for="lightPositionX">Light Position X</label>
+                    <div class="range-group">
+                        <input type="range" id="lightPositionX" min="-5" max="5" step="0.1" value="3">
+                        <div class="range-controls">
+                            <button class="range-arrow" onclick="decreaseLightX()">-</button>
+                            <input type="text" class="range-value-input" id="lightPositionXValue" value="3.0">
+                            <button class="range-arrow" onclick="increaseLightX()">+</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="lightPositionY">Light Position Y</label>
+                    <div class="range-group">
+                        <input type="range" id="lightPositionY" min="-5" max="5" step="0.1" value="3.5">
+                        <div class="range-controls">
+                            <button class="range-arrow" onclick="decreaseLightY()">-</button>
+                            <input type="text" class="range-value-input" id="lightPositionYValue" value="3.5">
+                            <button class="range-arrow" onclick="increaseLightY()">+</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="lightPositionZ">Light Position Z</label>
+                    <div class="range-group">
+                        <input type="range" id="lightPositionZ" min="-5" max="5" step="0.1" value="3">
+                        <div class="range-controls">
+                            <button class="range-arrow" onclick="decreaseLightZ()">-</button>
+                            <input type="text" class="range-value-input" id="lightPositionZValue" value="3.0">
+                            <button class="range-arrow" onclick="increaseLightZ()">+</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <button class="btn" onclick="applyLightingSettings()">Apply Lighting</button>
+                    <button class="btn btn-secondary" onclick="resetLightingDefaults()">Reset Lights</button>
+                </div>
+            </div>
         </div>
 
         <!-- Activity Log -->
@@ -565,6 +672,17 @@
         let gamepadUpdateInterval = null;
         let lastGamepadState = null;
 
+        // Lighting system state
+        let lightingSystem = {
+            lights: [
+                { position: [3.0, 3.5, 3.0], color: [1.0, 1.0, 1.0], intensity: 3.0, effect: 1, enabled: true },
+                { position: [3.0, 3.5, 3.0], color: [1.0, 1.0, 1.0], intensity: 3.0, effect: 0, enabled: false },
+                { position: [3.0, 3.5, 3.0], color: [1.0, 1.0, 1.0], intensity: 3.0, effect: 0, enabled: false },
+                { position: [3.0, 3.5, 3.0], color: [1.0, 1.0, 1.0], intensity: 3.0, effect: 0, enabled: false }
+            ],
+            activeLightIndex: 0
+        };
+
         // Initialize admin panel
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
@@ -572,6 +690,7 @@
             loadCurrentConfig();
             setupEventListeners();
             initializeGamepad();
+            initializeLightingControls();
             logActivity('Admin panel loaded');
         });
 
@@ -662,6 +781,12 @@
                 currentConfig = data;
                 updateUIFromConfig(data);
                 updateLastUpdateTime();
+                
+                // Ensure lighting UI is updated after config is loaded
+                if (data.scene && data.scene.lighting) {
+                    updateLightingUI();
+                }
+                
                 logActivity('Configuration loaded');
             } catch (error) {
                 showNotification('Failed to load configuration', 'error');
@@ -708,6 +833,18 @@
                     document.getElementById('videoPlanePositionYValue').value = (config.videoPlane.position[1] || 1.12).toFixed(2);
                     document.getElementById('videoPlanePositionZValue').value = (config.videoPlane.position[2] || 0).toFixed(2);
                 }
+            }
+            
+            // Lighting settings
+            if (config.scene && config.scene.lighting) {
+                const lighting = config.scene.lighting;
+                if (lighting.lights) {
+                    lightingSystem.lights = lighting.lights;
+                }
+                if (lighting.activeLightIndex !== undefined) {
+                    lightingSystem.activeLightIndex = lighting.activeLightIndex;
+                }
+                updateLightingUI();
             }
             
             // Update version
@@ -1555,6 +1692,311 @@
             if (hasChanged) {
                 updateVideoPlaneRealTime();
             }
+        }
+
+        function initializeLightingControls() {
+            // Light selection buttons
+            document.querySelectorAll('.light-btn').forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.light-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    lightingSystem.activeLightIndex = index;
+                    updateLightingUI();
+                    broadcastLightingUpdate();
+                    logActivity(`Selected light ${index + 1}`);
+                });
+            });
+
+            // Color preset buttons
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const color = btn.dataset.color;
+                    const rgb = hexToRgb(color);
+                    const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                    activeLight.color = [rgb.r / 255, rgb.g / 255, rgb.b / 255];
+                    
+                    updateLightingUI();
+                    broadcastLightingUpdate();
+                    logActivity(`Set light ${lightingSystem.activeLightIndex + 1} color to ${color}`);
+                });
+            });
+
+            // Effect buttons
+            document.querySelectorAll('.effect-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const effect = btn.dataset.effect;
+                    const effectMap = { 'static': 0, 'spin': 1, 'strobe': 2, 'rainbow': 3 };
+                    const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                    activeLight.effect = effectMap[effect];
+                    
+                    broadcastLightingUpdate();
+                    logActivity(`Set light ${lightingSystem.activeLightIndex + 1} effect to ${effect}`);
+                });
+            });
+
+            // Intensity slider
+            document.getElementById('lightIntensity').addEventListener('input', (e) => {
+                const intensityPercent = parseFloat(e.target.value);
+                const intensity = intensityPercent / 100 * 5.0;
+                document.getElementById('lightIntensityValue').value = intensityPercent + '%';
+                
+                const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                activeLight.intensity = intensity;
+                
+                broadcastLightingUpdate();
+            });
+            
+            // Position sliders
+            document.getElementById('lightPositionX').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('lightPositionXValue').value = value.toFixed(1);
+                
+                const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                activeLight.position[0] = value;
+                
+                broadcastLightingUpdate();
+            });
+            
+            document.getElementById('lightPositionY').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('lightPositionYValue').value = value.toFixed(1);
+                
+                const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                activeLight.position[1] = value;
+                
+                broadcastLightingUpdate();
+            });
+            
+            document.getElementById('lightPositionZ').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('lightPositionZValue').value = value.toFixed(1);
+                
+                const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                activeLight.position[2] = value;
+                
+                broadcastLightingUpdate();
+            });
+            
+            // Custom color inputs
+            document.getElementById('lightColorR').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                activeLight.color[0] = Math.max(0, Math.min(1, value));
+                
+                broadcastLightingUpdate();
+            });
+            
+            document.getElementById('lightColorG').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                activeLight.color[1] = Math.max(0, Math.min(1, value));
+                
+                broadcastLightingUpdate();
+            });
+            
+            document.getElementById('lightColorB').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+                activeLight.color[2] = Math.max(0, Math.min(1, value));
+                
+                broadcastLightingUpdate();
+            });
+
+            updateLightingUI();
+        }
+
+        function updateLightingUI() {
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            
+            // Update light selection buttons
+            document.querySelectorAll('.light-btn').forEach((btn, index) => {
+                btn.classList.remove('active');
+                if (index === lightingSystem.activeLightIndex) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Update custom color inputs
+            document.getElementById('lightColorR').value = activeLight.color[0].toFixed(1);
+            document.getElementById('lightColorG').value = activeLight.color[1].toFixed(1);
+            document.getElementById('lightColorB').value = activeLight.color[2].toFixed(1);
+            
+            // Update intensity
+            const intensityPercent = Math.round((activeLight.intensity / 5.0) * 100);
+            document.getElementById('lightIntensity').value = intensityPercent;
+            document.getElementById('lightIntensityValue').value = intensityPercent + '%';
+            
+            // Update position controls
+            document.getElementById('lightPositionX').value = activeLight.position[0];
+            document.getElementById('lightPositionXValue').value = activeLight.position[0].toFixed(1);
+            document.getElementById('lightPositionY').value = activeLight.position[1];
+            document.getElementById('lightPositionYValue').value = activeLight.position[1].toFixed(1);
+            document.getElementById('lightPositionZ').value = activeLight.position[2];
+            document.getElementById('lightPositionZValue').value = activeLight.position[2].toFixed(1);
+            
+            // Update effect buttons
+            document.querySelectorAll('.effect-btn').forEach(btn => btn.classList.remove('active'));
+            const effectMap = { 0: 'static', 1: 'spin', 2: 'strobe', 3: 'rainbow' };
+            const effectName = effectMap[activeLight.effect];
+            const activeEffectBtn = document.querySelector(`.effect-btn[data-effect="${effectName}"]`);
+            if (activeEffectBtn) {
+                activeEffectBtn.classList.add('active');
+            }
+            
+            // Update color preset buttons (find closest match)
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            const lightColor = activeLight.color;
+            const lightHex = rgbToHex(Math.round(lightColor[0] * 255), Math.round(lightColor[1] * 255), Math.round(lightColor[2] * 255));
+            const matchingColorBtn = document.querySelector(`.color-btn[data-color="${lightHex}"]`);
+            if (matchingColorBtn) {
+                matchingColorBtn.classList.add('active');
+            }
+        }
+        
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        function broadcastLightingUpdate() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const lightingData = {
+                    type: 'lighting_update',
+                    lighting: {
+                        lights: lightingSystem.lights,
+                        activeLightIndex: lightingSystem.activeLightIndex
+                    },
+                    timestamp: Date.now()
+                };
+                
+                ws.send(JSON.stringify(lightingData));
+                console.log('💡 Broadcasting lighting update:', lightingData.lighting);
+            }
+        }
+
+        function applyLightingSettings() {
+            broadcastLightingUpdate();
+            showNotification('Lighting settings applied!', 'success');
+            logActivity('Applied lighting settings');
+        }
+
+        function resetLightingDefaults() {
+            lightingSystem.lights.forEach(light => {
+                light.position = [3.0, 3.5, 3.0];
+                light.color = [1.0, 1.0, 1.0];
+                light.intensity = 3.0;
+                light.effect = 0;
+                light.enabled = true;
+            });
+            lightingSystem.activeLightIndex = 0;
+            
+            updateLightingUI();
+            broadcastLightingUpdate();
+            showNotification('Lighting reset to defaults', 'success');
+            logActivity('Reset lighting to defaults');
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // Lighting control helper functions
+        function decreaseLightIntensity() {
+            const current = parseInt(document.getElementById('lightIntensity').value);
+            const newValue = Math.max(0, current - 5);
+            document.getElementById('lightIntensity').value = newValue;
+            document.getElementById('lightIntensityValue').value = newValue + '%';
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.intensity = (newValue / 100) * 5.0;
+            broadcastLightingUpdate();
+        }
+
+        function increaseLightIntensity() {
+            const current = parseInt(document.getElementById('lightIntensity').value);
+            const newValue = Math.min(100, current + 5);
+            document.getElementById('lightIntensity').value = newValue;
+            document.getElementById('lightIntensityValue').value = newValue + '%';
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.intensity = (newValue / 100) * 5.0;
+            broadcastLightingUpdate();
+        }
+
+        function decreaseLightX() {
+            const current = parseFloat(document.getElementById('lightPositionX').value);
+            const newValue = Math.max(-5, current - 0.1);
+            document.getElementById('lightPositionX').value = newValue;
+            document.getElementById('lightPositionXValue').value = newValue.toFixed(1);
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.position[0] = newValue;
+            broadcastLightingUpdate();
+        }
+
+        function increaseLightX() {
+            const current = parseFloat(document.getElementById('lightPositionX').value);
+            const newValue = Math.min(5, current + 0.1);
+            document.getElementById('lightPositionX').value = newValue;
+            document.getElementById('lightPositionXValue').value = newValue.toFixed(1);
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.position[0] = newValue;
+            broadcastLightingUpdate();
+        }
+
+        function decreaseLightY() {
+            const current = parseFloat(document.getElementById('lightPositionY').value);
+            const newValue = Math.max(-5, current - 0.1);
+            document.getElementById('lightPositionY').value = newValue;
+            document.getElementById('lightPositionYValue').value = newValue.toFixed(1);
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.position[1] = newValue;
+            broadcastLightingUpdate();
+        }
+
+        function increaseLightY() {
+            const current = parseFloat(document.getElementById('lightPositionY').value);
+            const newValue = Math.min(5, current + 0.1);
+            document.getElementById('lightPositionY').value = newValue;
+            document.getElementById('lightPositionYValue').value = newValue.toFixed(1);
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.position[1] = newValue;
+            broadcastLightingUpdate();
+        }
+
+        function decreaseLightZ() {
+            const current = parseFloat(document.getElementById('lightPositionZ').value);
+            const newValue = Math.max(-5, current - 0.1);
+            document.getElementById('lightPositionZ').value = newValue;
+            document.getElementById('lightPositionZValue').value = newValue.toFixed(1);
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.position[2] = newValue;
+            broadcastLightingUpdate();
+        }
+
+        function increaseLightZ() {
+            const current = parseFloat(document.getElementById('lightPositionZ').value);
+            const newValue = Math.min(5, current + 0.1);
+            document.getElementById('lightPositionZ').value = newValue;
+            document.getElementById('lightPositionZValue').value = newValue.toFixed(1);
+            
+            const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
+            activeLight.position[2] = newValue;
+            broadcastLightingUpdate();
         }
     </script>
 </body>
