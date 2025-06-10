@@ -405,13 +405,18 @@ float calcShadow(vec3 origin, vec3 lightDir, Light light) {
                 if (abs(local.x) <= planeSize.x && abs(local.y) <= planeSize.y) {
                     vec2 uv = local.xy / planeSize + 0.5;
                     uv.y = 1.0 - uv.y;
-                    vec4 tex = safeTextureSample(iChannel1, uv);
-        
-                    // Get chroma key alpha for smooth transparency
-                    float chromaAlpha = getChromaAlpha(tex.rgb);
-                    if (chromaAlpha > 0.1) { // Only block light if significantly opaque
-                        return result * (1.0 - chromaAlpha); // Partial shadow based on alpha
+                    
+                    // Check if we're outside the valid texture area - no shadow if so
+                    if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+                        vec4 tex = texture2D(iChannel1, uv);
+            
+                        // Get chroma key alpha for smooth transparency
+                        float chromaAlpha = getChromaAlpha(tex.rgb);
+                        if (chromaAlpha > 0.1) { // Only block light if significantly opaque
+                            return result * (1.0 - chromaAlpha); // Partial shadow based on alpha
+                        }
                     }
+                    // If outside texture bounds, don't cast any shadow (continue as if transparent)
                 }
             }
         }
@@ -511,7 +516,21 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
         vec2 uv = local.xy / planeSize + 0.5;
         uv.y = 1.0 - uv.y;
 
-        vec4 tex = safeTextureSample(iChannel1, uv);
+        // Check if we're outside the valid texture area (0-1 range)
+        // If so, make this area transparent regardless of chroma key settings
+        if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+            // Outside texture bounds - always transparent
+            vec3 deepPos = pos + dir * EPSILON * 2.0;
+            marchThroughField(deepPos, dir, eye, true);
+            
+            if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
+                return calcLighting(deepPos, eye, light, material);
+            } else {
+                return vec4(0.0, 0.0, 0.0, 1.0); // Black background
+            }
+        }
+
+        vec4 tex = texture2D(iChannel1, uv); // Use regular texture2D since we know UV is valid
         
         // Get chroma key alpha for smooth transparency
         float chromaAlpha = getChromaAlpha(tex.rgb);
@@ -536,14 +555,17 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
         // Use the stronger of front or back lighting
         float specular = max(frontSpecular, backSpecular);
         float diffuse = max(frontDiffuse, backDiffuse);
-        float ambient = 0.05;
+        float ambient = 0.15; // Increased ambient light for better visibility of back side
         
         float attenuation = min(1.0, 1.0/(lightDist/light.brightness));
         float shadow = calcShadow(pos, lightDir, light);
         float occlusion = calcOcclusion(pos, frontNormal);
         
         // Apply lighting to the video texture
-        vec4 litColor = light.color * tex * clamp(((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion), 0.0, 1.0);
+        // Ensure minimum lighting so back side is never completely black
+        float minLighting = 0.2; // Minimum lighting level to prevent complete darkness
+        float lightingFactor = max(minLighting, ((specular+diffuse)*shadow*attenuation*0.7)+(ambient*occlusion));
+        vec4 litColor = light.color * tex * clamp(lightingFactor, 0.0, 1.0);
         
         // Handle transparency with simple blending
         if (chromaAlpha < 0.99) {
@@ -554,6 +576,10 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
             if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
                 vec4 backgroundColor = calcLighting(deepPos, eye, light, material);
                 return mix(backgroundColor, litColor, chromaAlpha);
+            } else {
+                // No object behind transparent area - return black background
+                vec4 blackBackground = vec4(0.0, 0.0, 0.0, 1.0);
+                return mix(blackBackground, litColor, chromaAlpha);
             }
         }
         

@@ -23,7 +23,7 @@ body {
     margin: 0;
     overflow: hidden;
     background: black;
-    font-family: 'ag5';
+    /* font-family: 'ag5'; */
 }
 #labels {
     position: absolute;
@@ -445,7 +445,7 @@ body .event-artist {
     text-decoration: underline;
     text-shadow: 2px 2px 0px black;
     font-weight: bold;
-    font-family: 'ag5', monospace;
+    /* font-family: 'ag5', monospace; */
 }
 
 body .event-title {
@@ -512,7 +512,7 @@ body #enterButton:active {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) translate(140px, 0) scale(0.8);
-    width: 450px; /* Increased from 300px */
+    width: 500px; /* Increased from 450px */
     background: #c0c0c0;
     border: 2px outset #c0c0c0;
     font-family: 'MS Sans Serif', sans-serif;
@@ -546,12 +546,13 @@ body #enterButton:active {
     padding: 4px 8px 4px 4px;
     font-size: 14px;
     line-height: 1.5;
-    min-height: 160px;
+    min-height: 180px; /* Increased from 160px */
+    position: relative; /* Added for positioning child elements */
+    padding-right: 70px; /* Added space for the mascot image */
 }
 
 #chatBubble .chat-content div {
     margin-bottom: 4px;
-    width: 100%;
     box-sizing: border-box;
 }
 
@@ -559,32 +560,32 @@ body #enterButton:active {
     margin-bottom: 0;
 }
 
-#chatBubble .username {
+.tutorial-message .username {
     color: rgb(0, 255, 255);
     font-weight: bold;
 }
 
 .got-it-button {
-    background: #c0c0c0;
-    color: black;
-    border: 2px outset #c0c0c0;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-family: 'MS Sans Serif', sans-serif;
+    color: #000000;
+    /* background-color: lightgray; */
+    background-color: #d3d3d3;
+    /* background-color: #0cbe28; */
+    border: 3px outset gray;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: bold;
     cursor: pointer;
-    margin: 6px auto 0 auto;
+    margin: 8px auto 0 auto;
     display: block;
     pointer-events: auto;
-    transition: none;
-}
-
-.got-it-button:hover {
-    background: #d0d0d0;
+    border-radius: 0;
+    min-width: 80px;
+    /* text-transform: uppercase; */
+    /* letter-spacing: 1px; */
 }
 
 .got-it-button:active {
     border: 2px inset #c0c0c0;
-    background: #b0b0b0;
 }
 
 .chat-bubble-image {
@@ -593,7 +594,8 @@ body #enterButton:active {
     right: 0;
     height: 115px;
     width: auto;
-    z-index: 1004;
+    z-index: 4; /* Lowered from 1004 to appear within blue content area */
+    pointer-events: none; /* Ensures clicks pass through the image */
 }
 
 /* Auto-hide animation */
@@ -1909,15 +1911,39 @@ Mobile responsive orb cubes:
 /* Tutorial message styles */
 .tutorial-message {
     opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    margin-bottom: 6px;
-    font-size: 14px;
+    /* transition: opacity 0.3s ease; */
+    margin-bottom: 8px;
 }
 
 .tutorial-message.show {
     opacity: 1;
-    transform: translateY(0);
+}
+
+.tutorial-message .username {
+    font-weight: bold;
+}
+
+/* User message in tutorial - left aligned like Blueby */
+.tutorial-user-message {
+    text-align: left;
+    margin-bottom: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tutorial-user-message.show {
+    opacity: 1;
+}
+
+.tutorial-user-message .username {
+    color: #ff00ff;
+    font-weight: bold;
+}
+
+.tutorial-user-message .username::after {
+    content: " ►";
+    color: #ffff00;
+    font-weight: normal;
 }
 
 /* Typing indicator */
@@ -1926,6 +1952,7 @@ Mobile responsive orb cubes:
     color: rgba(255, 255, 255, 0.7);
     font-style: italic;
     font-size: 12px;
+    margin-bottom: 8px;
 }
 
 .typing-indicator.show {
@@ -1934,7 +1961,7 @@ Mobile responsive orb cubes:
 
 .typing-dots {
     display: inline-block;
-    animation: typingDots 1.5s infinite;
+    animation: typingDots 1.0s infinite;
 }
 
 @keyframes typingDots {
@@ -1942,4 +1969,177 @@ Mobile responsive orb cubes:
     40% { content: '.'; }
     60% { content: '..'; }
     80%, 100% { content: '...'; }
+}
+
+/* Bottom section for input and buttons */
+.chat-bottom-section {
+    background: #c0c0c0;
+    padding: 6px;
+    border-top: 1px solid #888;
+    position: relative;
+}
+
+/* Tutorial input section - sliding tray */
+#tutorialInputSection {
+    display: flex;
+    margin-bottom: 2px;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all 0.4s ease-in-out;
+    overflow: hidden;
+    max-height: 0;
+}
+
+#tutorialInputSection.show {
+    transform: translateY(0);
+    opacity: 1;
+    max-height: 40px;
+}
+
+#tutorialInput {
+    flex: 1;
+    padding: 4px 6px;
+    border: 1px inset #888;
+    background-color: #ffffff;
+    color: black;
+    font-size: 12px;
+    outline: none;
+    border-radius: 0;
+    font-family: 'MS Sans Serif', sans-serif;
+}
+
+.tutorial-submit {
+    background-color: #c0c0c0;
+    border: 2px outset #c0c0c0;
+    border-radius: 0;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 11px;
+    margin-left: 4px;
+    font-family: 'MS Sans Serif', sans-serif;
+}
+
+.tutorial-submit:hover {
+    background-color: #d0d0d0;
+}
+
+.tutorial-submit:active {
+    border: 2px inset #c0c0c0;
+    background-color: #b0b0b0;
+}
+
+/* Set background colors for each color option */
+.tutorial-color-option:nth-child(1) { background-color: #FF5252; }
+.tutorial-color-option:nth-child(2) { background-color: #FF9800; }
+.tutorial-color-option:nth-child(3) { background-color: #FFEB3B; }
+.tutorial-color-option:nth-child(4) { background-color: #4CAF50; }
+.tutorial-color-option:nth-child(5) { background-color: #2196F3; }
+.tutorial-color-option:nth-child(6) { background-color: #9C27B0; }
+.tutorial-color-option:nth-child(7) { background-color: #E91E63; }
+.tutorial-color-option:nth-child(8) { background-color: #607D8B; }
+
+/* Tutorial color picker - skeumorphic sphere style */
+#tutorialColorPicker {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 0;
+}
+
+.tutorial-color-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    justify-content: center;
+}
+
+.tutorial-color-option {
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    margin: 0 auto;
+    position: relative;
+    border-radius: 50%;
+    /* Outer orange/yellow border like in reference */
+    border: 3px solid #ff8800;
+    /* Inner dark border */
+    box-shadow: 
+        inset 0 0 0 2px #333333,
+        /* Main glossy sphere effect */
+        inset 0 8px 16px rgba(255, 255, 255, 0.4),
+        inset 0 -8px 16px rgba(0, 0, 0, 0.3),
+        /* Outer shadow */
+        0 4px 8px rgba(0, 0, 0, 0.3);
+    
+    /* Radial gradient for sphere effect */
+    background: radial-gradient(circle at 30% 30%, 
+        rgba(255, 255, 255, 0.8) 0%, 
+        transparent 40%), 
+        var(--sphere-color, #ff0000);
+    
+    transition: all 0.15s ease;
+}
+
+/* Color variables for each sphere */
+.tutorial-color-option[data-color="#FF5252"] {
+    --sphere-color: #FF5252;
+}
+
+.tutorial-color-option[data-color="#FF9800"] {
+    --sphere-color: #FF9800;
+}
+
+.tutorial-color-option[data-color="#FFEB3B"] {
+    --sphere-color: #FFEB3B;
+}
+
+.tutorial-color-option[data-color="#4CAF50"] {
+    --sphere-color: #4CAF50;
+}
+
+.tutorial-color-option[data-color="#2196F3"] {
+    --sphere-color: #2196F3;
+}
+
+.tutorial-color-option[data-color="#9C27B0"] {
+    --sphere-color: #9C27B0;
+}
+
+.tutorial-color-option[data-color="#E91E63"] {
+    --sphere-color: #E91E63;
+}
+
+.tutorial-color-option[data-color="#607D8B"] {
+    --sphere-color: #607D8B;
+}
+
+.tutorial-color-option:hover {
+    transform: translateY(-1px);
+    border-color: #ffaa00;
+    box-shadow: 
+        inset 0 0 0 2px #333333,
+        inset 0 8px 16px rgba(255, 255, 255, 0.5),
+        inset 0 -8px 16px rgba(0, 0, 0, 0.2),
+        0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.tutorial-color-option:active {
+    transform: translateY(1px);
+    border-color: #ff6600;
+    box-shadow: 
+        inset 0 0 0 2px #333333,
+        inset 0 4px 8px rgba(0, 0, 0, 0.4),
+        inset 0 -4px 8px rgba(255, 255, 255, 0.2),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tutorial-color-option.selected {
+    transform: scale(1.1);
+    border-color: #ffdd00;
+    box-shadow: 
+        inset 0 0 0 2px #333333,
+        inset 0 8px 16px rgba(255, 255, 255, 0.6),
+        inset 0 -8px 16px rgba(0, 0, 0, 0.2),
+        0 0 16px rgba(255, 221, 0, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.4);
 }
