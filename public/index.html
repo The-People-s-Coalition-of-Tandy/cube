@@ -363,7 +363,7 @@
         function getDefaultClientConfig() {
             return {
                 video: {
-                    m3u8Url: "https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8",
+                    m3u8Url: "https://live.pcotandy.org/hls/stream.m3u8",
                     chromaKey: {
                         enabled: true,
                         color: [0.0, 1.0, 0.0], // Green
@@ -1521,7 +1521,7 @@
                 console.log('Using stream URL from config:', streamUrl);
             } else {
                 // Fallback to default URL if config not loaded yet
-                streamUrl = "https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8";
+                streamUrl = "https://live.pcotandy.org/hls/stream.m3u8";
                 console.log('Using fallback stream URL (config not loaded):', streamUrl);
             }
             
@@ -2664,7 +2664,6 @@
         // Orb management
         const MAX_ORBS = MOBILE_PERFORMANCE_MODE ? MOBILE_MAX_ORBS : DESKTOP_MAX_ORBS; // Mobile gets 0 orbs, desktop gets 100
         const MAX_ORB_SIZE = 0.9; // Maximum orb radius - adjust this to change biggest orb size
-        const FIXED_BOT_COUNT = Math.min(MAX_ORBS, 20); // Fixed number of bot orbs (max 20 or MAX_ORBS if smaller)
         const SPAWN_INTERVAL = 4000; // 4 seconds between management checks
         let orbs = [];
         let realUserOrbs = new Map(); // Track real user orbs separately
@@ -2695,37 +2694,99 @@
         function createInitialBotOrbs() {
             if (botOrbsInitialized || MOBILE_PERFORMANCE_MODE) return;
             
-            console.log(`Creating ${FIXED_BOT_COUNT} initial bot orbs...`);
-            for (let i = 0; i < FIXED_BOT_COUNT; i++) {
+            const VISIBLE_ORB_LIMIT = 4; // Match the shader's MAX_ORBS limit
+            console.log(`Creating initial bot orbs (limit: ${VISIBLE_ORB_LIMIT})...`);
+            
+            // Create exactly VISIBLE_ORB_LIMIT bot orbs initially
+            // Real users will replace these as they join
+            for (let i = 0; i < VISIBLE_ORB_LIMIT; i++) {
                 const botOrb = new Orb(getRandomName(), false);
                 orbs.push(botOrb);
             }
+            
             botOrbsInitialized = true;
-            console.log(`Created ${FIXED_BOT_COUNT} bot orbs`);
+            console.log(`Created ${VISIBLE_ORB_LIMIT} initial bot orbs`);
         }
 
         function replaceBotWithUser(userId, username, color, position) {
-            // Find a bot orb to replace
-            const botOrbIndex = orbs.findIndex(orb => !orb.isRealUser);
+            // First, check if this user already has an orb (prevent duplicates)
+            if (realUserOrbs.has(userId)) {
+                console.log(`User ${username} already has an orb, updating position only`);
+                const existingOrb = realUserOrbs.get(userId);
+                existingOrb.updatePosition(position);
+                return;
+            }
             
-            if (botOrbIndex !== -1) {
-                // Remove the bot orb
-                const botOrb = orbs[botOrbIndex];
-                usedNames.delete(botOrb.name); // Free up the bot's name
-                orbs.splice(botOrbIndex, 1);
-                console.log(`Replaced bot orb "${botOrb.name}" with user "${username}"`);
+            // Find the first bot orb in the visible range (first 4 positions) to replace
+            let botOrbIndex = -1;
+            const VISIBLE_ORB_LIMIT = 4; // Match the shader's MAX_ORBS limit
+            
+            // Look for bot orbs in the first 4 positions first (these are the visible ones)
+            for (let i = 0; i < Math.min(orbs.length, VISIBLE_ORB_LIMIT); i++) {
+                if (!orbs[i].isRealUser) {
+                    botOrbIndex = i;
+                    break;
+                }
+            }
+            
+            // If no bot orbs in visible positions, look for any bot orb
+            if (botOrbIndex === -1) {
+                botOrbIndex = orbs.findIndex(orb => !orb.isRealUser);
             }
             
             // Create the real user orb
             const userOrb = new Orb(username, true, userId, color);
             userOrb.updatePosition(position);
             
-            // Add to both tracking systems
+            if (botOrbIndex !== -1) {
+                // Replace the bot orb
+                const botOrb = orbs[botOrbIndex];
+                usedNames.delete(botOrb.name); // Free up the bot's name
+                orbs[botOrbIndex] = userOrb; // Replace in the same position
+                console.log(`Replaced bot orb "${botOrb.name}" at position ${botOrbIndex} with user "${username}"`);
+            } else {
+                // No bot orbs to replace, but we still need to ensure real users are in visible positions
+                // If we have less than 4 orbs total, just add the user
+                if (orbs.length < VISIBLE_ORB_LIMIT) {
+                    orbs.push(userOrb);
+                    console.log(`Added user "${username}" to position ${orbs.length - 1}`);
+                } else {
+                    // We have 4+ orbs but no bots to replace - this shouldn't happen in normal operation
+                    // But if it does, replace the last orb to make room
+                    console.warn(`No bot orbs available to replace, replacing last orb for user "${username}"`);
+                    const lastOrb = orbs[orbs.length - 1];
+                    if (!lastOrb.isRealUser) {
+                        usedNames.delete(lastOrb.name);
+                    }
+                    orbs[orbs.length - 1] = userOrb;
+                }
+            }
+            
+            // Add to real user tracking
             realUserOrbs.set(userId, userOrb);
-            orbs.push(userOrb);
+            
+            // Ensure real users are prioritized in the first 4 positions
+            prioritizeRealUsersInVisiblePositions();
             
             console.log(`Created orb for user ${username} (${userId}) at position`, position);
+            console.log(`Current orb order: ${orbs.slice(0, 4).map((orb, i) => `${i}: ${orb.name}(${orb.isRealUser ? 'USER' : 'BOT'})`).join(', ')}`);
             textAtlasNeedsUpdate = true;
+        }
+
+        function prioritizeRealUsersInVisiblePositions() {
+            const VISIBLE_ORB_LIMIT = 4;
+            
+            // Separate real users and bots
+            const realUsers = orbs.filter(orb => orb.isRealUser);
+            const bots = orbs.filter(orb => !orb.isRealUser);
+            
+            // Rebuild orbs array with real users first, then bots
+            orbs = [...realUsers, ...bots];
+            
+            // Log the new arrangement for debugging
+            if (realUsers.length > 0) {
+                console.log(`Prioritized real users: ${orbs.slice(0, VISIBLE_ORB_LIMIT).map((orb, i) => `${i}: ${orb.name}(${orb.isRealUser ? 'USER' : 'BOT'})`).join(', ')}`);
+            }
         }
 
         function replaceUserWithBot(userId) {
@@ -2733,15 +2794,16 @@
                 const userOrb = realUserOrbs.get(userId);
                 const index = orbs.indexOf(userOrb);
                 if (index > -1) {
-                    orbs.splice(index, 1);
+                    // Replace the user orb with a new bot orb
+                    const botOrb = new Orb(getRandomName(), false);
+                    orbs[index] = botOrb; // Replace in the same position
+                    console.log(`Replaced user orb "${userOrb.name}" with bot orb "${botOrb.name}" at position ${index}`);
                 }
                 realUserOrbs.delete(userId);
                 
-                // Create a new bot orb to replace the user
-                const botOrb = new Orb(getRandomName(), false);
-                orbs.push(botOrb);
+                // Re-prioritize to ensure real users stay in visible positions
+                prioritizeRealUsersInVisiblePositions();
                 
-                console.log(`Replaced user orb with bot orb "${botOrb.name}"`);
                 textAtlasNeedsUpdate = true;
             }
         }
@@ -3199,31 +3261,69 @@
                 return;
             }
             
+            const VISIBLE_ORB_LIMIT = 4; // Match the shader's MAX_ORBS limit
+            
             // Create initial bot orbs if not done yet
             if (!botOrbsInitialized) {
                 createInitialBotOrbs();
             }
             
             // Count current orbs
-            const botOrbs = orbs.filter(orb => !orb.isRealUser);
             const realUserOrbCount = orbs.filter(orb => orb.isRealUser).length;
-            const totalDesiredOrbs = FIXED_BOT_COUNT + realUserOrbCount;
+            const botOrbCount = orbs.filter(orb => !orb.isRealUser).length;
+            const totalOrbs = orbs.length;
             
-            // Ensure we maintain the right number of bot orbs
-            // (This handles edge cases where bot orbs might get lost)
-            const expectedBotCount = Math.max(0, FIXED_BOT_COUNT - realUserOrbCount);
-            if (botOrbs.length < expectedBotCount) {
-                const orbsToAdd = expectedBotCount - botOrbs.length;
-                console.log(`Adding ${orbsToAdd} bot orbs to maintain fixed count`);
+            // We want to maintain exactly VISIBLE_ORB_LIMIT total orbs
+            // Real users get priority, bots fill the remaining slots
+            const desiredBotCount = Math.max(0, VISIBLE_ORB_LIMIT - realUserOrbCount);
+            
+            // Add bot orbs if we need more
+            if (botOrbCount < desiredBotCount) {
+                const orbsToAdd = desiredBotCount - botOrbCount;
+                console.log(`Adding ${orbsToAdd} bot orbs (have ${botOrbCount}, need ${desiredBotCount})`);
                 for (let i = 0; i < orbsToAdd; i++) {
                     const botOrb = new Orb(getRandomName(), false);
                     orbs.push(botOrb);
                 }
             }
             
+            // Remove excess bot orbs if we have too many
+            if (botOrbCount > desiredBotCount) {
+                const orbsToRemove = botOrbCount - desiredBotCount;
+                console.log(`Removing ${orbsToRemove} excess bot orbs (have ${botOrbCount}, need ${desiredBotCount})`);
+                
+                // Remove bot orbs from the end first (less visible positions)
+                let removedCount = 0;
+                for (let i = orbs.length - 1; i >= 0 && removedCount < orbsToRemove; i--) {
+                    if (!orbs[i].isRealUser) {
+                        const removedOrb = orbs.splice(i, 1)[0];
+                        usedNames.delete(removedOrb.name);
+                        removedCount++;
+                    }
+                }
+            }
+            
+            // Ensure real users are prioritized in visible positions
+            prioritizeRealUsersInVisiblePositions();
+            
+            // Trim to exactly VISIBLE_ORB_LIMIT orbs (safety check)
+            if (orbs.length > VISIBLE_ORB_LIMIT) {
+                console.warn(`Too many orbs (${orbs.length}), trimming to ${VISIBLE_ORB_LIMIT}`);
+                // Remove excess orbs from the end (should be bots due to prioritization)
+                const excessOrbs = orbs.splice(VISIBLE_ORB_LIMIT);
+                excessOrbs.forEach(orb => {
+                    if (!orb.isRealUser) {
+                        usedNames.delete(orb.name);
+                    }
+                });
+            }
+            
             // Log current state periodically
             if (Math.random() < 0.1) { // 10% chance to log (every ~40 seconds on average)
-                console.log(`Orb status: ${botOrbs.length} bots, ${realUserOrbCount} real users, ${orbs.length} total`);
+                const currentBotCount = orbs.filter(orb => !orb.isRealUser).length;
+                const currentRealUserCount = orbs.filter(orb => orb.isRealUser).length;
+                console.log(`Orb status: ${currentBotCount} bots, ${currentRealUserCount} real users, ${orbs.length} total (limit: ${VISIBLE_ORB_LIMIT})`);
+                console.log(`Visible orbs: ${orbs.slice(0, VISIBLE_ORB_LIMIT).map((orb, i) => `${i}: ${orb.name}(${orb.isRealUser ? 'USER' : 'BOT'})`).join(', ')}`);
             }
 
             setTimeout(manageOrbs, SPAWN_INTERVAL);
