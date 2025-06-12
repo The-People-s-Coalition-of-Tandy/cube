@@ -638,6 +638,31 @@
                     <button class="btn btn-secondary" onclick="resetLightingDefaults()">Reset Lights</button>
                 </div>
             </div>
+
+            <!-- Background/Skybox Control -->
+            <div class="control-group">
+                <h3>🌌 Background Control</h3>
+                <div class="button-group">
+                    <button id="tunnelBtn" class="control-btn">🌀 Tunnel Shader</button>
+                    <button id="skyboxBtn" class="control-btn">🌌 Cubemap Skybox</button>
+                    <button id="blackBtn" class="control-btn">⚫ Black</button>
+                </div>
+                <div class="status-info">
+                    <span id="backgroundStatus">Status: Loading...</span>
+                </div>
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="applyBackgroundPreset('psychedelic')">🌀 Psychedelic</button>
+                    <button class="preset-btn" onclick="applyBackgroundPreset('space')">🌌 Space</button>
+                    <button class="preset-btn" onclick="applyBackgroundPreset('minimal')">⚫ Minimal</button>
+                    <button class="preset-btn" onclick="applyBackgroundPreset('custom')">🎨 Custom</button>
+                </div>
+                <div class="info-text">
+                    <p>🌀 <strong>Tunnel:</strong> Abstract moving tunnel effect</p>
+                    <p>🌌 <strong>Skybox:</strong> 360° environment (requires textures)</p>
+                    <p>⚫ <strong>Black:</strong> Simple black background</p>
+                    <p><a href="/generate-skybox.html" target="_blank">🎨 Generate Skybox Textures</a></p>
+                </div>
+            </div>
         </div>
 
         <!-- Activity Log -->
@@ -683,6 +708,81 @@
             activeLightIndex: 0
         };
 
+        // Background system state
+        let backgroundSystem = {
+            currentMode: 'black', // Default to black
+            
+            init() {
+                // Set up event listeners for background buttons
+                document.getElementById('tunnelBtn').addEventListener('click', () => {
+                    this.setMode('tunnel');
+                });
+                
+                document.getElementById('skyboxBtn').addEventListener('click', () => {
+                    this.setMode('skybox');
+                });
+                
+                document.getElementById('blackBtn').addEventListener('click', () => {
+                    this.setMode('black');
+                });
+                
+                // Update UI to reflect current mode
+                this.updateUI();
+            },
+            
+            setMode(mode) {
+                this.currentMode = mode;
+                this.updateUI();
+                this.sendUpdate();
+            },
+            
+            updateUI() {
+                // Update button states
+                document.querySelectorAll('.control-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                if (this.currentMode === 'tunnel') {
+                    document.getElementById('tunnelBtn').classList.add('active');
+                    document.getElementById('backgroundStatus').textContent = 'Status: 🌀 Tunnel Shader Active';
+                } else if (this.currentMode === 'skybox') {
+                    document.getElementById('skyboxBtn').classList.add('active');
+                    document.getElementById('backgroundStatus').textContent = 'Status: 🌌 Cubemap Skybox Active';
+                } else {
+                    document.getElementById('blackBtn').classList.add('active');
+                    document.getElementById('backgroundStatus').textContent = 'Status: ⚫ Black Background Active';
+                }
+            },
+            
+            sendUpdate() {
+                // Send to server with correct format expected by main application
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'background_update',
+                        background: {
+                            mode: this.currentMode
+                        }
+                    }));
+                    console.log('Background update sent:', { mode: this.currentMode });
+                }
+            }
+        };
+
+        // Initialize everything when page loads
+        function initializeAdmin() {
+            console.log('🚀 Initializing admin panel...');
+            
+            // Initialize all systems
+            initializeWebSocket();
+            initializeControls();
+            backgroundSystem.init(); // Initialize background system
+            
+            // Load initial configuration
+            loadConfiguration();
+            
+            console.log('✅ Admin panel initialized');
+        }
+
         // Initialize admin panel
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
@@ -691,6 +791,7 @@
             setupEventListeners();
             initializeGamepad();
             initializeLightingControls();
+            backgroundSystem.init(); // Initialize background system here instead of separate function
             logActivity('Admin panel loaded');
         });
 
@@ -1997,6 +2098,46 @@
             const activeLight = lightingSystem.lights[lightingSystem.activeLightIndex];
             activeLight.position[2] = newValue;
             broadcastLightingUpdate();
+        }
+
+        // Background Control Functions
+        function applyBackgroundPreset(preset) {
+            switch (preset) {
+                case 'psychedelic':
+                    backgroundSystem.setMode('tunnel');
+                    break;
+                case 'space':
+                    backgroundSystem.setMode('skybox');
+                    break;
+                case 'minimal':
+                    backgroundSystem.setMode('black');
+                    break;
+                case 'custom':
+                    // Let user choose
+                    break;
+            }
+            showNotification(`Background preset "${preset}" applied!`, 'success');
+            logActivity(`Applied background preset: ${preset}`);
+        }
+
+        async function checkSkyboxTextures() {
+            const textures = ['right.jpg', 'left.jpg', 'top.jpg', 'bottom.jpg', 'front.jpg', 'back.jpg'];
+            let foundTextures = 0;
+            
+            // Check each texture file
+            for (const texture of textures) {
+                try {
+                    const response = await fetch(`/skybox/${texture}`, { method: 'HEAD' });
+                    if (response.ok) {
+                        foundTextures++;
+                    }
+                } catch (error) {
+                    // File doesn't exist or can't be accessed
+                }
+            }
+            
+            console.log(`Found ${foundTextures}/6 skybox textures`);
+            return foundTextures;
         }
     </script>
 </body>

@@ -1,6 +1,18 @@
 {
   "video": {
-    "m3u8Url": "https://eun11.playlist.ttvnw.net/v1/playlist/CtkEkHtE-4XUsrBmkvE5HF36UwANzlRlnVJ31sB5ItE_2rct-rJmalANYriNZoQqgNnaijMISP_BNILnIdC-q_cL75xlfFG9Gr4fDy7EKWDkj915Ye3mVTfQEdrbKLCge5nrXOoe9WJEVYzYWPjqjzfIaa9l6-QXwqPItQ-RsYL9S_lBuM5AiRTLwv0pqTB0yVvazYpXCheaSDlv4kBwl_NjTng5bgdBVmJy0W2V3s-K-om1oPa97qULuoj7iJjNi6dYVkHwR1DKoLvY6HlmjP-GbQpCQwCV-la-PcexzkPmALYhJy-bJ7w3By2WvRvMeeFZzZNPRdLxlsg8PddV3_Tik1Kb297PJb4k7XtlOyGfSrcsiviJ1F08cXinhm1pV72cl_uecfOAJlnNAPknF5becWM2uxKH-W4b4vvUpPOnWh7o_Zlw6zyFl6iqI0jQfLqEKUEHlPpwJgYas3sE0pqYEYTelim6C5oVgSkpbpLZa1EBaAD0p332qKGSzaiZ8hYFX0rAcHmE4RmX2tSUTzbL1EHqDKYIhXRB9lZ-GbYN7hdlAIHyUgQJEcLpl3n124gffpqvDVZGvoGSlWLfBvXrVVeeHylgZT-DLtmgqnQ7za9gzPmhv393E9lfifO5-ndkD1xjy3eUmsBo5FeDb99t0sBjy9-2ag9cccQzoMo8k_4ULisfH0qjiPiMjYUzc94SbCCp0ODu_yN3O1G9oUjnbTXxDX4a8Couri8cowI651f3b9kRMcRz4E6zKfP7XrokZZhjsvwKnPgU_-ckHeZzGvBZjFEZjpcSVhoMDvuZRgJNpMGO12D6IAEqCWV1LXdlc3QtMjC_DA.m3u8"
+    "m3u8Url": "https://eun11.playlist.ttvnw.net/v1/playlist/CtkEkHtE-4XUsrBmkvE5HF36UwANzlRlnVJ31sB5ItE_2rct-rJmalANYriNZoQqgNnaijMISP_BNILnIdC-q_cL75xlfFG9Gr4fDy7EKWDkj915Ye3mVTfQEdrbKLCge5nrXOoe9WJEVYzYWPjqjzfIaa9l6-QXwqPItQ-RsYL9S_lBuM5AiRTLwv0pqTB0yVvazYpXCheaSDlv4kBwl_NjTng5bgdBVmJy0W2V3s-K-om1oPa97qULuoj7iJjNi6dYVkHwR1DKoLvY6HlmjP-GbQpCQwCV-la-PcexzkPmALYhJy-bJ7w3By2WvRvMeeFZzZNPRdLxlsg8PddV3_Tik1Kb297PJb4k7XtlOyGfSrcsiviJ1F08cXinhm1pV72cl_uecfOAJlnNAPknF5becWM2uxKH-W4b4vvUpPOnWh7o_Zlw6zyFl6iqI0jQfLqEKUEHlPpwJgYas3sE0pqYEYTelim6C5oVgSkpbpLZa1EBaAD0p332qKGSzaiZ8hYFX0rAcHmE4RmX2tSUTzbL1EHqDKYIhXRB9lZ-GbYN7hdlAIHyUgQJEcLpl3n124gffpqvDVZGvoGSlWLfBvXrVVeeHylgZT-DLtmgqnQ7za9gzPmhv393E9lfifO5-ndkD1xjy3eUmsBo5FeDb99t0sBjy9-2ag9cccQzoMo8k_4ULisfH0qjiPiMjYUzc94SbCCp0ODu_yN3O1G9oUjnbTXxDX4a8Couri8cowI651f3b9kRMcRz4E6zKfP7XrokZZhjsvwKnPgU_-ckHeZzGvBZjFEZjpcSVhoMDvuZRgJNpMGO12D6IAEqCWV1LXdlc3QtMjC_DA.m3u8",
+    "brightness": 1,
+    "contrast": 1,
+    "saturation": 1,
+    "chromaKey": {
+      "enabled": true,
+      "color": [
+        0,
+        0,
+        0
+      ],
+      "threshold": 0.5
+    }
   },
   "scene": {
     "lighting": {
@@ -79,9 +91,10 @@
         }
       ],
       "activeLightIndex": 0
-    }
+    },
+    "backgroundMode": "black"
   },
-  "lastUpdated": 1749615311905,
+  "lastUpdated": 1749706003770,
   "version": 1,
   "m3u8Url": "./assets/kat.mp4",
   "chromaKey": {

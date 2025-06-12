@@ -1,27 +1,37 @@
 {
-  "title": "★ UPCOMING EVENTS ★",
-  "timezone": "Cube Standard Time (CST)",
-  "disclaimer": "** Some events may occur in parallel dimensions",
   "events": [
     {
-        "date": "June 28th, 7:15 PM",
-        "name": "Tandy Gauntlet Practice for the Big Stage",
-        "type": "Grayking's Goon",
-        "weird": false
-      },
-
+      "datetime": "2025-06-28T19:15",
+      "date": "Friday, June 28, 2025 at 7:15 PM",
+      "name": "Tandy Gauntlet Practice for the Big Stage",
+      "type": "Grayking's Goon",
+      "weird": false
+    },
     {
-      "date": "July 1, 7:15 PM",
+      "datetime": "2025-07-01T19:15",
+      "date": "Monday, July 1, 2025 at 7:15 PM",
       "name": "2025 General MIDI Competition Live",
       "type": "Grayking's Choice",
       "weird": false
     },
-
     {
-      "date": "July 15, 7:15 PM",
+      "datetime": "2025-07-15T19:15",
+      "date": "Monday, July 15, 2025 at 7:15 PM",
       "name": "Shareholder Meeting",
       "type": "Quarterly Review",
       "weird": true
+    },
+    {
+      "datetime": "2025-07-31T19:05",
+      "date": "Thursday, July 31, 2025 at 7:05 PM",
+      "name": "─=≡Σ((( つ◕ل͜◕)つ",
+      "type": "ヽ(｀Д´)⊃━☆ﾟ. * ･ ｡ﾟ,"
+    },
+    {
+      "datetime": "2025-09-17T19:00",
+      "date": "Wednesday, September 17, 2025 at 7:00 PM",
+      "name": "Julia Humphrey Bodian",
+      "type": "Classical Guitar Recital"
     }
   ]
-} 
+}

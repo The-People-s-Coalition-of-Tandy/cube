@@ -204,12 +204,12 @@
                 </div>
                 
                 <div class="current-event">
-                    <div class="live-indicator">
+                    <div class="live-indicator" id="liveIndicator" style="display: none;">
                         <span class="live-dot no-animation"></span>
                         <span>LIVE</span>
                     </div>
-                    <div class="event-artist">Katarina Mazur</div>
-                    <div class="event-title"><i>A Dance Performance</i></div>
+                    <div class="event-artist" id="currentEventArtist">Loading...</div>
+                    <div class="event-title" id="currentEventTitle"><i>Checking schedule...</i></div>
                 </div>
                 
                 <button id="enterButton">Enter</button>
@@ -235,7 +235,7 @@
         </div>
         <div class="stream-time">00:00:00</div>
         <div id="date"></div>
-        <div class="now-playing marquee">Cut on a Can dance – Kat Mazur</div>
+        <div class="now-playing marquee" id="nowPlayingText">Loading event details...</div>
         <div id="cameraMode" style="font-size: 12px; opacity: 0.7;">📱 Mobile Camera</div>
     </div>
     
@@ -420,6 +420,35 @@
                     Object.assign(mergedConfig.scene, config.scene);
                 }
                 
+                // Apply lighting settings
+                if (config.scene && config.scene.lighting) {
+                    const lighting = config.scene.lighting;
+                    if (lighting.lights) {
+                        lightingSystem.lights = lighting.lights;
+                    }
+                    if (lighting.activeLightIndex !== undefined) {
+                        lightingSystem.activeLightIndex = lighting.activeLightIndex;
+                    }
+                    updateLightingUniforms();
+                    console.log('✅ Applied lighting configuration:', lighting);
+                }
+                
+                // Apply background mode settings
+                if (config.scene && config.scene.backgroundMode !== undefined) {
+                    const mode = config.scene.backgroundMode;
+                    if (mode === 'black') {
+                        backgroundMode = 0;
+                        useSkybox = false;
+                    } else if (mode === 'tunnel') {
+                        backgroundMode = 1;
+                        useSkybox = false;
+                    } else if (mode === 'skybox') {
+                        backgroundMode = 2;
+                        useSkybox = true;
+                    }
+                    console.log('✅ Applied background mode configuration:', mode, '(backgroundMode =', backgroundMode + ')');
+                }
+                
                 console.log('✅ Final merged configuration:', mergedConfig);
                 config = mergedConfig;
                 currentConfig = mergedConfig; // Update current config
@@ -564,6 +593,22 @@
                     console.log('✅ Applied lighting configuration:', lighting);
                 }
                 
+                // Apply background mode settings
+                if (config.scene && config.scene.backgroundMode !== undefined) {
+                    const mode = config.scene.backgroundMode;
+                    if (mode === 'black') {
+                        backgroundMode = 0;
+                        useSkybox = false;
+                    } else if (mode === 'tunnel') {
+                        backgroundMode = 1;
+                        useSkybox = false;
+                    } else if (mode === 'skybox') {
+                        backgroundMode = 2;
+                        useSkybox = true;
+                    }
+                    console.log('✅ Applied background mode configuration:', mode, '(backgroundMode =', backgroundMode + ')');
+                }
+                
                 console.log('🎨 Shader uniforms updated successfully');
             } catch (error) {
                 console.error('❌ Failed to update shader uniforms:', error);
@@ -686,6 +731,15 @@
         let textureCreationCount = 0;
         let lastPerformanceLog = Date.now();
         let frameCount = 0;
+
+        // Skybox textures and control
+        let skyboxTextures = {
+            posX: null, negX: null,
+            posY: null, negY: null,
+            posZ: null, negZ: null
+        };
+        let useSkybox = false; // Toggle between skybox and procedural sky
+        let backgroundMode = 0; // 0=black, 1=tunnel, 2=skybox
 
         // Cached uniform locations for performance
         let uniformLocations = {};
@@ -1743,26 +1797,28 @@
         }
 
         function updateStreamIndicator(isLive, hasError = false) {
-            const liveIndicator = document.querySelector('.live-indicator');
-            const liveDot = document.querySelector('.live-dot');
-            const nowPlaying = document.querySelector('.now-playing');
+            // Target the stream info live indicator specifically, not the event display one
+            const streamInfo = document.getElementById('streamInfo');
+            const liveIndicator = streamInfo ? streamInfo.querySelector('.live-indicator') : null;
+            const liveDot = streamInfo ? streamInfo.querySelector('.live-dot') : null;
+            const nowPlaying = document.getElementById('nowPlayingText');
+            
+            if (!liveIndicator) return; // Exit if we can't find the stream info indicator
             
             if (hasError) {
                 liveIndicator.innerHTML = '<div class="live-dot" style="background: #ff6600;"></div><span>ERROR</span>';
-                nowPlaying.textContent = 'Video content unavailable';
+                if (nowPlaying) nowPlaying.textContent = 'Video content unavailable';
                 return;
             }
             
             if (isLive && !isUsingFallback) {
-                // Livestream is active
-                liveIndicator.innerHTML = '<div class="live-dot"></div><span>LIVE</span>';
-                nowPlaying.textContent = 'Cut on a Can dance – Kat Mazur';
+                // Livestream is active - but don't override our event display
+                liveIndicator.innerHTML = '<div class="live-dot"></div><span>STREAM</span>';
+                // Don't override the now playing text - let our event system handle it
             } else {
                 // Using MP4 fallback
-                // liveIndicator.innerHTML = '<div class="live-dot" style="background: #ffaa00; animation: none;"></div><span>RECORDED</span>';
-                // nowPlaying.textContent = 'Fallback content playing';
-                liveIndicator.innerHTML = '<div class="live-dot"></div><span>LIVE</span>';
-                nowPlaying.textContent = 'Cut on a Can dance – Kat Mazur';
+                liveIndicator.innerHTML = '<div class="live-dot"></div><span>STREAM</span>';
+                // Don't override the now playing text - let our event system handle it
             }
         }
 
@@ -1959,7 +2015,7 @@
                 console.log('Reset gain to 0 before fade');
             }
             
-            // We don't want to show BlueBye immediately anymore
+            // We don't want to show BlueBy immediately anymore
             // The intro sequence will call showBlueby() when it's done
             
             // Hide the welcome screen
@@ -3094,6 +3150,59 @@
             return texture;
         }
 
+        // Function to load a single skybox face texture
+        function loadSkyboxTexture(gl, imagePath) {
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+
+            // Create a placeholder pixel while the image loads
+            const pixel = new Uint8Array([135, 206, 235, 255]); // Sky blue placeholder
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+
+            // Load the actual image
+            const image = new Image();
+            image.crossOrigin = 'anonymous'; // Handle CORS if needed
+            image.onload = function() {
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                console.log(`✅ Loaded skybox texture: ${imagePath}`);
+            };
+            image.onerror = function() {
+                console.warn(`❌ Failed to load skybox texture: ${imagePath}`);
+            };
+            
+            image.src = imagePath;
+            return texture;
+        }
+
+        // Function to initialize all skybox textures
+        function initSkyboxTextures() {
+            // You can replace these paths with your actual skybox images
+            // For now, I'll use placeholder URLs - you'll need to replace these with real skybox images
+            const skyboxPaths = {
+                posX: './skybox/posx.jpg',   // Right face (+X)
+                negX: './skybox/negx.jpg',    // Left face (-X)
+                posY: './skybox/posy.jpg',     // Top face (+Y)
+                negY: './skybox/negy.jpg',  // Bottom face (-Y)
+                posZ: './skybox/posz.jpg',   // Front face (+Z)
+                negZ: './skybox/negz.jpg'     // Back face (-Z)
+            };
+
+            // Load each skybox face
+            skyboxTextures.posX = loadSkyboxTexture(gl, skyboxPaths.posX);
+            skyboxTextures.negX = loadSkyboxTexture(gl, skyboxPaths.negX);
+            skyboxTextures.posY = loadSkyboxTexture(gl, skyboxPaths.posY);
+            skyboxTextures.negY = loadSkyboxTexture(gl, skyboxPaths.negY);
+            skyboxTextures.posZ = loadSkyboxTexture(gl, skyboxPaths.posZ);
+            skyboxTextures.negZ = loadSkyboxTexture(gl, skyboxPaths.negZ);
+
+            console.log('🌌 Skybox textures initialized');
+        }
+
         // Add function to load shader files
         async function loadShaderFile(url) {
             try {
@@ -3228,6 +3337,9 @@
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+                // Initialize skybox textures
+                initSkyboxTextures();
 
                 startTime = Date.now();
                 
@@ -3465,6 +3577,37 @@
                     );
                 }
 
+                // Bind skybox textures and set skybox uniforms
+                gl.uniform1i(uniformLocations.uUseSkybox, useSkybox ? 1 : 0);
+                gl.uniform1i(uniformLocations.uBackgroundMode, backgroundMode);
+                
+                if (useSkybox && skyboxTextures.posX) {
+                    // Bind skybox textures to texture units 3-8
+                    gl.activeTexture(gl.TEXTURE3);
+                    gl.bindTexture(gl.TEXTURE_2D, skyboxTextures.posX);
+                    gl.uniform1i(uniformLocations.uSkyboxPosX, 3);
+                    
+                    gl.activeTexture(gl.TEXTURE4);
+                    gl.bindTexture(gl.TEXTURE_2D, skyboxTextures.negX);
+                    gl.uniform1i(uniformLocations.uSkyboxNegX, 4);
+                    
+                    gl.activeTexture(gl.TEXTURE5);
+                    gl.bindTexture(gl.TEXTURE_2D, skyboxTextures.posY);
+                    gl.uniform1i(uniformLocations.uSkyboxPosY, 5);
+                    
+                    gl.activeTexture(gl.TEXTURE6);
+                    gl.bindTexture(gl.TEXTURE_2D, skyboxTextures.negY);
+                    gl.uniform1i(uniformLocations.uSkyboxNegY, 6);
+                    
+                    gl.activeTexture(gl.TEXTURE7);
+                    gl.bindTexture(gl.TEXTURE_2D, skyboxTextures.posZ);
+                    gl.uniform1i(uniformLocations.uSkyboxPosZ, 7);
+                    
+                    gl.activeTexture(gl.TEXTURE8);
+                    gl.bindTexture(gl.TEXTURE_2D, skyboxTextures.negZ);
+                    gl.uniform1i(uniformLocations.uSkyboxNegZ, 8);
+                }
+
                 // Render scene with mobile-optimized text handling
                 if (MOBILE_PERFORMANCE_MODE) {
                     // Simple render without text processing for mobile
@@ -3567,7 +3710,17 @@
                 uLightIntensities: gl.getUniformLocation(program, 'uLightIntensities'),
                 uLightEffects: gl.getUniformLocation(program, 'uLightEffects'),
                 uActiveLightIndex: gl.getUniformLocation(program, 'uActiveLightIndex'),
-                uLightsEnabled: gl.getUniformLocation(program, 'uLightsEnabled')
+                uLightsEnabled: gl.getUniformLocation(program, 'uLightsEnabled'),
+                // Skybox uniforms
+                uUseSkybox: gl.getUniformLocation(program, 'uUseSkybox'),
+                uSkyboxPosX: gl.getUniformLocation(program, 'uSkyboxPosX'),
+                uSkyboxNegX: gl.getUniformLocation(program, 'uSkyboxNegX'),
+                uSkyboxPosY: gl.getUniformLocation(program, 'uSkyboxPosY'),
+                uSkyboxNegY: gl.getUniformLocation(program, 'uSkyboxNegY'),
+                uSkyboxPosZ: gl.getUniformLocation(program, 'uSkyboxPosZ'),
+                uSkyboxNegZ: gl.getUniformLocation(program, 'uSkyboxNegZ'),
+                // Background mode uniform
+                uBackgroundMode: gl.getUniformLocation(program, 'uBackgroundMode')
             };
             console.log('✅ Cached uniform locations for performance (including chroma key)');
         }
@@ -3664,6 +3817,7 @@
                 const response = await fetch('./events.json');
                 const eventData = await response.json();
                 populateCalendar(eventData);
+                await updateCurrentEvent(eventData); // Add this line to update current event
             } catch (error) {
                 console.error('Failed to load events:', error);
                 // Fallback content
@@ -3673,11 +3827,280 @@
                         Unable to load event schedule. Please try again later.
                     </div>
                 `;
+                // Update current event with error state
+                updateCurrentEventError();
             }
+        }
+
+        async function updateCurrentEvent(eventData) {
+            // First check for live event override
+            try {
+                const liveResponse = await fetch('./live-event.json');
+                if (liveResponse.ok) {
+                    const liveEvent = await liveResponse.json();
+                    if (liveEvent && liveEvent.name && liveEvent.isLiveOverride) {
+                        // Show the live override event
+                        updateEventDisplay(liveEvent, true);
+                        return;
+                    }
+                }
+            } catch (error) {
+                // No live event override, continue with scheduled events
+            }
+            
+            const now = new Date();
+            
+            // Find the current or next upcoming event from scheduled events
+            let currentEvent = null;
+            let nextEvent = null;
+            
+            // Sort events by datetime to find current/next
+            const sortedEvents = eventData.events
+                .filter(event => {
+                    const eventDate = event.datetime ? new Date(event.datetime) : new Date(event.date);
+                    return !isNaN(eventDate.getTime());
+                })
+                .sort((a, b) => {
+                    const dateA = a.datetime ? new Date(a.datetime) : new Date(a.date);
+                    const dateB = b.datetime ? new Date(b.datetime) : new Date(b.date);
+                    return dateA - dateB;
+                });
+            
+            // Find current event (happening now) or next upcoming event
+            for (let event of sortedEvents) {
+                const eventDate = event.datetime ? new Date(event.datetime) : new Date(event.date);
+                
+                // Check if event is happening now (within 30 minutes before to 2 hours after)
+                const timeDiff = eventDate - now;
+                const thirtyMinutes = 30 * 60 * 1000;
+                const twoHours = 2 * 60 * 60 * 1000;
+                
+                // Event is considered "live" if it's within 30 minutes of start time or up to 2 hours after
+                if (timeDiff >= -twoHours && timeDiff <= thirtyMinutes) {
+                    currentEvent = event;
+                    break;
+                } else if (timeDiff > 0 && !nextEvent) {
+                    // This is the next upcoming event
+                    nextEvent = event;
+                }
+            }
+            
+            // Use current event if found, otherwise use next event
+            const displayEvent = currentEvent || nextEvent;
+            
+            if (displayEvent) {
+                updateEventDisplay(displayEvent, currentEvent !== null);
+            } else {
+                updateEventDisplayEmpty();
+            }
+        }
+        
+        function updateEventDisplay(event, isLive) {
+            // Update live indicator
+            const liveIndicator = document.getElementById('liveIndicator');
+            if (liveIndicator) {
+                if (isLive) {
+                    liveIndicator.style.display = 'flex';
+                    liveIndicator.querySelector('span:last-child').textContent = 'LIVE';
+                    liveIndicator.querySelector('.live-dot').style.background = '#ff0000'; // Red for live
+                    liveIndicator.style.color = '#ff0000';
+                } else {
+                    liveIndicator.style.display = 'flex';
+                    liveIndicator.querySelector('span:last-child').textContent = 'NEXT UP';
+                    liveIndicator.querySelector('.live-dot').style.background = '#ffff00'; // Yellow for next up
+                    liveIndicator.style.color = '#ffff00';
+                }
+            }
+            
+            // Update artist name
+            const artistElement = document.getElementById('currentEventArtist');
+            if (artistElement) {
+                // Extract artist name from event name or use a default
+                const artistName = extractArtistName(event.name) || event.name;
+                artistElement.textContent = artistName;
+            }
+            
+            // Update event title with date information
+            const eventTitleElement = document.getElementById('currentEventTitle');
+            if (eventTitleElement) {
+                const eventDate = event.datetime ? new Date(event.datetime) : new Date(event.date);
+                const dateString = eventDate.toLocaleString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                if (isLive) {
+                    eventTitleElement.innerHTML = `<i>${event.type} – Live Now</i>`;
+                } else {
+                    eventTitleElement.innerHTML = `<i>${event.type}</i><br><small style="color: #ffff00;">${dateString}</small>`;
+                }
+            }
+            
+            // Update stream info (now playing text)
+            const nowPlayingElement = document.getElementById('nowPlayingText');
+            if (nowPlayingElement) {
+                const eventDate = event.datetime ? new Date(event.datetime) : new Date(event.date);
+                
+                if (isLive) {
+                    nowPlayingElement.textContent = `${event.name} – Live Now`;
+                } else {
+                    // Calculate time until event
+                    const now = new Date();
+                    const timeDiff = eventDate - now;
+                    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let timeUntil = '';
+                    if (days > 0) {
+                        timeUntil = `in ${days} day${days > 1 ? 's' : ''}`;
+                    } else if (hours > 0) {
+                        timeUntil = `in ${hours} hour${hours > 1 ? 's' : ''}`;
+                    } else if (minutes > 0) {
+                        timeUntil = `in ${minutes} minute${minutes > 1 ? 's' : ''}`;
+                    } else {
+                        timeUntil = 'starting soon';
+                    }
+                    
+                    const dateString = eventDate.toLocaleString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    nowPlayingElement.textContent = `Next: ${event.name} – ${dateString} (${timeUntil})`;
+                }
+            }
+        }
+        
+        function updateEventDisplayEmpty() {
+            // Update live indicator
+            const liveIndicator = document.getElementById('liveIndicator');
+            if (liveIndicator) {
+                liveIndicator.style.display = 'none';
+            }
+            
+            // Update artist name
+            const artistElement = document.getElementById('currentEventArtist');
+            if (artistElement) {
+                artistElement.textContent = 'THE CUBE';
+            }
+            
+            // Update event title
+            const eventTitleElement = document.getElementById('currentEventTitle');
+            if (eventTitleElement) {
+                eventTitleElement.innerHTML = '<i>No scheduled events</i>';
+            }
+            
+            // Update stream info
+            const nowPlayingElement = document.getElementById('nowPlayingText');
+            if (nowPlayingElement) {
+                nowPlayingElement.textContent = 'Check back soon for upcoming events';
+            }
+        }
+        
+        function updateCurrentEventError() {
+            // Update live indicator
+            const liveIndicator = document.getElementById('liveIndicator');
+            if (liveIndicator) {
+                liveIndicator.style.display = 'flex';
+                liveIndicator.querySelector('span:last-child').textContent = 'ERROR';
+                liveIndicator.style.color = '#ff0000';
+            }
+            
+            // Update artist name
+            const artistElement = document.getElementById('currentEventArtist');
+            if (artistElement) {
+                artistElement.textContent = 'THE CUBE';
+            }
+            
+            // Update event title
+            const eventTitleElement = document.getElementById('currentEventTitle');
+            if (eventTitleElement) {
+                eventTitleElement.innerHTML = '<i>Unable to load schedule</i>';
+            }
+            
+            // Update stream info
+            const nowPlayingElement = document.getElementById('nowPlayingText');
+            if (nowPlayingElement) {
+                nowPlayingElement.textContent = 'Schedule temporarily unavailable';
+            }
+        }
+        
+        function extractArtistName(eventName) {
+            // Try to extract artist name from event name
+            // Look for patterns like "Artist Name - Event" or "Event by Artist Name"
+            if (eventName.includes(' - ')) {
+                const parts = eventName.split(' - ');
+                return parts[parts.length - 1].trim(); // Take the last part as artist
+            } else if (eventName.includes(' by ')) {
+                const parts = eventName.split(' by ');
+                return parts[parts.length - 1].trim(); // Take the part after "by"
+            } else if (eventName.includes(' with ')) {
+                const parts = eventName.split(' with ');
+                return parts[parts.length - 1].trim(); // Take the part after "with"
+            }
+            
+            // If no clear pattern, return null to use default
+            return null;
         }
 
         function populateCalendar(eventData) {
             const calendarContent = document.getElementById('calendar-content');
+            
+            // Filter out events that are more than 1 day in the past
+            const now = new Date();
+            const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+            
+            const upcomingEvents = eventData.events.filter(event => {
+                const eventDate = event.datetime ? new Date(event.datetime) : new Date(event.date);
+                return !isNaN(eventDate.getTime()) && eventDate >= oneDayAgo;
+            });
+            
+            // Sort events by datetime - upcoming events first (closest to now)
+            const sortedEvents = upcomingEvents.sort((a, b) => {
+                // Try to use datetime field first, fall back to date field
+                const dateA = a.datetime ? new Date(a.datetime) : new Date(a.date);
+                const dateB = b.datetime ? new Date(b.datetime) : new Date(b.date);
+                
+                // Handle invalid dates by putting them at the end
+                if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
+                if (isNaN(dateA.getTime())) return 1;
+                if (isNaN(dateB.getTime())) return -1;
+                
+                // Sort by closest to current time (upcoming events first)
+                const diffA = Math.abs(dateA - now);
+                const diffB = Math.abs(dateB - now);
+                
+                // If both are in the future or both are in the past, sort by date
+                if ((dateA >= now && dateB >= now) || (dateA < now && dateB < now)) {
+                    return dateA - dateB;
+                }
+                
+                // Prioritize future events over past events
+                if (dateA >= now && dateB < now) return -1;
+                if (dateA < now && dateB >= now) return 1;
+                
+                return diffA - diffB;
+            });
+            
+            // If no upcoming events, show a message
+            if (sortedEvents.length === 0) {
+                calendarContent.innerHTML = `
+                    <div class="calendar-title">★ NO UPCOMING TRANSMISSIONS ★</div>
+                    <div class="calendar-note">
+                        Check back soon for new events!
+                    </div>
+                `;
+                return;
+            }
             
             let html = `
 
@@ -3692,13 +4115,34 @@
                     <tbody>
             `;
             
-            eventData.events.forEach(event => {
-                const weirdClass = event.weird ? ' event-weird' : '';
+            sortedEvents.forEach(event => {
+                // Handle both new datetime format and legacy date format
+                let displayDate = event.date;
+                
+                // If we have a datetime field, format it nicely for the table
+                if (event.datetime) {
+                    try {
+                        const date = new Date(event.datetime);
+                        displayDate = date.toLocaleString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                    } catch (e) {
+                        console.warn('Could not parse datetime:', event.datetime);
+                        // Fall back to the date field
+                        displayDate = event.date;
+                    }
+                }
+                
                 html += `
                     <tr>
-                        <td class="event-date">${event.date}</td>
-                        <td class="event-name${weirdClass}">${event.name}</td>
-                        <td class="event-type${weirdClass}">${event.type}</td>
+                        <td class="event-date">${displayDate}</td>
+                        <td class="event-name">${event.name}</td>
+                        <td class="event-type">${event.type}</td>
                     </tr>
                 `;
             });
@@ -4075,6 +4519,11 @@
                     applyLightingUpdate(data.lighting);
                     break;
                     
+                case 'background_update':
+                    console.log('🌌 Received background update:', data.background);
+                    applyBackgroundUpdate(data.background);
+                    break;
+                    
                 default:
                     console.log('Unknown message type:', data.type);
             }
@@ -4394,6 +4843,28 @@
             updateLightingUniforms();
             
             console.log('Lighting updated from admin panel:', lightingData);
+        }
+
+        // Handle background updates from admin panel via WebSocket
+        function applyBackgroundUpdate(backgroundData) {
+            if (backgroundData.mode !== undefined) {
+                // Update the background mode
+                if (backgroundData.mode === 'black') {
+                    backgroundMode = 0;
+                    useSkybox = false;
+                    console.log('⚫ Background mode set to: BLACK');
+                } else if (backgroundData.mode === 'tunnel') {
+                    backgroundMode = 1;
+                    useSkybox = false;
+                    console.log('🌀 Background mode set to: TUNNEL');
+                } else if (backgroundData.mode === 'skybox') {
+                    backgroundMode = 2;
+                    useSkybox = true;
+                    console.log('🌌 Background mode set to: SKYBOX');
+                }
+            }
+            
+            console.log('Background updated from admin panel:', backgroundData);
         }
 
         // Chat notification sound function

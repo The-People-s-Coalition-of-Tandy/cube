@@ -37,6 +37,8 @@ function requireAuth(req, res, next) {
     if (req.path.startsWith('/api/')) {
       return res.status(401).json({ error: 'Authentication required' });
     } else {
+      // Store the original URL for redirect after login
+      req.session.redirectUrl = req.originalUrl;
       // Redirect HTML requests to login page
       return res.redirect('/login.html');
     }
@@ -71,27 +73,34 @@ class ConfigManager {
 
   getDefaultConfig() {
     return {
-      video: {
-        m3u8Url: "https://euw13.playlist.ttvnw.net/v1/playlist/Cr0EolXzPmxgENJh-XhvsQqJdTbzIGm3mfNhPxYPHaF6UB78fxYQHeczDf1iThVq4JuVnBf5kwGfODX-tzhqW2WHmLmbfODl5L7jICP_E818A0pBiu22hW_5tfOaljlN93Mm2K7vv9X-_A_ZOhHZ-FQeExY9whK9rgIwQn4UzOh8vuoEJ_NtPXtIMCobfgQRagzSDyrIdgyiQ6jKgycfYIKCmcML5gv2IIRn16jaVptV8Dn33tcn_GLNxsvaWIKL7_Dxx7NWIlAmeYP98iJmLvwviSCcLPgN_E75jBhcnKaqjlSqXo_4d6O2EuUw0bqjiGarii71FRj9KikwPX8n83obDr4aTssXWMABCu7eOwiFrpccWqD5LRxNepW1AcO5IY4xMvW-PujLH-YkwvRq8GJBWeIo8ZGCozE0JcCzTnh6I1ErZo0_sxjqoCeg5ZkgG6YmfVotVv-hvujc3LYLLW5yuoxipwIALoeEbLzZbkQO6C2dP6lRspTe_9hvZZzp-Q22M_-mAyy9fRoi5disliXgXgpxEqd7utwjESHrbu2MFtpF70mVcGaABCrcxfwngDky5c0GWJL3Qy3U2gdOQeZ4H5KpTJlttig8a4F9IgBNYvw6bVBYu0c6FWPhfOzlL4GepMePL2ol9pnnmdGTg9Y68VLI3wYz2WEU6O59BaqD_-a7i7F67Eae2Se5SBgWHplnJoNeHbmdIqYdPmeksEmEVFtIYUy4-yg9enEjSYMF-xzg-vEQGFbZ---3Zv-AGgzrnG-A-ZrNkw5XUmMgASoJZXUtd2VzdC0yMLcM.m3u8",
-        chromaKey: {
-          enabled: true,
-          color: [0.0, 1.0, 0.0], // Green by default instead of black
-          threshold: 0.3,
-          featherEdge: 0.1
-        },
-        brightness: 1.0,
-        contrast: 1.0,
-        saturation: 1.0
+      orbs: [
+        { position: [0, 0, 2], color: [1, 0, 0], radius: 0.1 },
+        { position: [1, 0, 2], color: [0, 1, 0], radius: 0.1 },
+        { position: [-1, 0, 2], color: [0, 0, 1], radius: 0.1 },
+        { position: [0, 1, 2], color: [1, 1, 0], radius: 0.1 },
+        { position: [0, -1, 2], color: [1, 0, 1], radius: 0.1 },
+        { position: [0, 0, 3], color: [0, 1, 1], radius: 0.1 }
+      ],
+      plane: {
+        position: [0, 0, 0.5],
+        size: [1, 1]
       },
-      scene: {
-        lighting: {
-          position: [3.0, 3.5, 3.0],
-          color: [1.0, 1.0, 1.0, 1.0],
-          brightness: 3.0
-        }
+      chromaKey: {
+        color: [0, 1, 0],
+        threshold: 0.4,
+        enabled: true
       },
-      lastUpdated: Date.now(),
-      version: 1
+      lighting: {
+        positions: [[3, 3.5, 3], [0, 5, 0], [-3, 2, 3], [0, -2, 5]],
+        colors: [[1, 1, 1], [1, 0.8, 0.6], [0.8, 0.8, 1], [1, 0.9, 0.7]],
+        intensities: [3, 2.5, 2, 2.8],
+        effects: [0, 1, 2, 3],
+        activeLightIndex: 0,
+        enabled: [true, true, true, true]
+      },
+      background: {
+        useSkybox: false  // Default to black background (no skybox, no tunnel)
+      }
     };
   }
 
@@ -189,10 +198,17 @@ app.post('/api/auth/login', async (req, res) => {
     if (validUsername && validPassword) {
       req.session.authenticated = true;
       req.session.username = username;
+      
+      // Get the redirect URL if it exists
+      const redirectUrl = req.session.redirectUrl || '/admin';
+      // Clear the redirect URL from session
+      delete req.session.redirectUrl;
+      
       res.json({ 
         success: true, 
         message: 'Authentication successful',
-        username: username
+        username: username,
+        redirectUrl: redirectUrl
       });
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
@@ -214,9 +230,16 @@ app.post('/api/auth/logout', (req, res) => {
 
 app.get('/api/auth/status', (req, res) => {
   if (req.session && req.session.authenticated) {
+    const redirectUrl = req.session.redirectUrl;
+    // Clear redirect URL if it exists
+    if (redirectUrl) {
+      delete req.session.redirectUrl;
+    }
+    
     res.json({ 
       authenticated: true, 
-      username: req.session.username 
+      username: req.session.username,
+      redirectUrl: redirectUrl || '/admin'
     });
   } else {
     res.json({ authenticated: false });
@@ -249,6 +272,128 @@ app.post('/api/config', requireAuth, async (req, res) => {
 // Admin panel route (protected)
 app.get('/admin', requireAuth, (req, res) => {
   res.sendFile(__dirname + '/public/admin.html');
+});
+
+// Calendar admin route (protected)
+app.get('/calendar', requireAuth, (req, res) => {
+  res.sendFile(__dirname + '/public/calendar.html');
+});
+
+// Events API routes
+app.get('/api/events', async (req, res) => {
+  try {
+    const eventsPath = path.join(__dirname, 'public', 'events.json');
+    const data = await fs.readFile(eventsPath, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Error loading events:', error);
+    // Return default structure if file doesn't exist
+    res.json({
+      events: []
+    });
+  }
+});
+
+app.post('/api/events', requireAuth, async (req, res) => {
+  try {
+    const eventsData = req.body;
+    
+    // Sort events by datetime - upcoming events first (closest to now)
+    if (eventsData.events && Array.isArray(eventsData.events)) {
+      const now = new Date();
+      eventsData.events.sort((a, b) => {
+        // Try to use datetime field first, fall back to date field
+        const dateA = a.datetime ? new Date(a.datetime) : new Date(a.date);
+        const dateB = b.datetime ? new Date(b.datetime) : new Date(b.date);
+        
+        // Handle invalid dates by putting them at the end
+        if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
+        if (isNaN(dateA.getTime())) return 1;
+        if (isNaN(dateB.getTime())) return -1;
+        
+        // Sort by closest to current time (upcoming events first)
+        const diffA = Math.abs(dateA - now);
+        const diffB = Math.abs(dateB - now);
+        
+        // If both are in the future or both are in the past, sort by date
+        if ((dateA >= now && dateB >= now) || (dateA < now && dateB < now)) {
+          return dateA - dateB;
+        }
+        
+        // Prioritize future events over past events
+        if (dateA >= now && dateB < now) return -1;
+        if (dateA < now && dateB >= now) return 1;
+        
+        return diffA - diffB;
+      });
+    }
+    
+    const eventsPath = path.join(__dirname, 'public', 'events.json');
+    await fs.writeFile(eventsPath, JSON.stringify(eventsData, null, 2));
+    console.log('Events updated by', req.session.username || 'admin');
+    res.json({ success: true, message: 'Events updated successfully' });
+  } catch (error) {
+    console.error('Error saving events:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Live Event Override API routes
+app.get('/api/live-event', async (req, res) => {
+  try {
+    const liveEventPath = path.join(__dirname, 'public', 'live-event.json');
+    const data = await fs.readFile(liveEventPath, 'utf8');
+    const liveEvent = JSON.parse(data);
+    
+    // Check if the live event is still valid (not too old)
+    if (liveEvent.timestamp) {
+      const eventTime = new Date(liveEvent.timestamp);
+      const now = new Date();
+      const hoursSinceSet = (now - eventTime) / (1000 * 60 * 60);
+      
+      // Auto-expire live events after 6 hours
+      if (hoursSinceSet > 6) {
+        // Delete the expired live event
+        await fs.unlink(liveEventPath);
+        return res.json(null);
+      }
+    }
+    
+    res.json(liveEvent);
+  } catch (error) {
+    // No live event file exists or error reading it
+    res.json(null);
+  }
+});
+
+app.post('/api/live-event', requireAuth, async (req, res) => {
+  try {
+    const liveEvent = {
+      ...req.body,
+      timestamp: new Date().toISOString(),
+      setBy: req.session.username || 'admin'
+    };
+    
+    const liveEventPath = path.join(__dirname, 'public', 'live-event.json');
+    await fs.writeFile(liveEventPath, JSON.stringify(liveEvent, null, 2));
+    console.log('Live event set by', req.session.username || 'admin', ':', liveEvent.name);
+    res.json({ success: true, message: 'Live event set successfully' });
+  } catch (error) {
+    console.error('Error setting live event:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/live-event', requireAuth, async (req, res) => {
+  try {
+    const liveEventPath = path.join(__dirname, 'public', 'live-event.json');
+    await fs.unlink(liveEventPath);
+    console.log('Live event cleared by', req.session.username || 'admin');
+    res.json({ success: true, message: 'Live event cleared successfully' });
+  } catch (error) {
+    // File doesn't exist, which is fine
+    res.json({ success: true, message: 'Live event cleared successfully' });
+  }
 });
 
 // Login page route
@@ -441,6 +586,37 @@ wss.on('connection', (ws) => {
           broadcastToAll({
             type: 'lighting_update',
             lighting: data.lighting,
+            updatedBy: 'admin',
+            timestamp: Date.now()
+          });
+        }
+      } else if (data.type === 'background_update') {
+        // Handle background/skybox updates from admin panel
+        if (data.background) {
+          console.log('🌌 Broadcasting background update:', data.background);
+          
+          // Save background configuration to config file
+          try {
+            const currentConfig = configManager.getConfig();
+            if (!currentConfig.scene) {
+              currentConfig.scene = {};
+            }
+            
+            // Update the background configuration
+            currentConfig.scene.useSkybox = data.background.useSkybox;
+            currentConfig.scene.backgroundMode = data.background.mode;
+            
+            // Save the updated configuration
+            await configManager.saveConfig();
+            console.log('🌌 Background configuration saved to config file');
+          } catch (error) {
+            console.error('Error saving background configuration:', error);
+          }
+          
+          // Broadcast background update to all viewers (for immediate visual updates)
+          broadcastToAll({
+            type: 'background_update',
+            background: data.background,
             updatedBy: 'admin',
             timestamp: Date.now()
           });

@@ -224,8 +224,8 @@
                 const data = await response.json();
                 
                 if (data.authenticated) {
-                    // Already logged in, redirect to admin panel
-                    window.location.href = '/admin';
+                    // Already logged in, redirect to intended page or admin panel
+                    window.location.href = data.redirectUrl || '/admin';
                 }
             } catch (error) {
                 console.log('Not authenticated');
@@ -258,8 +258,8 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Login successful, redirect to admin panel
-                    window.location.href = '/admin';
+                    // Login successful, redirect to intended page or admin panel
+                    window.location.href = data.redirectUrl || '/admin';
                 } else {
                     showError(data.error || 'Login failed');
                 }

@@ -42,6 +42,16 @@ uniform int uLightEffects[4];      // Effect types: 0=static, 1=spin, 2=strobe, 
 uniform int uActiveLightIndex;     // Currently active light (0-3)
 uniform bool uLightsEnabled[4];    // Which lights are enabled
 
+// Skybox uniforms - add these to your JavaScript uniform setup
+uniform sampler2D uSkyboxPosX;   // Right face (+X)
+uniform sampler2D uSkyboxNegX;   // Left face (-X)
+uniform sampler2D uSkyboxPosY;   // Top face (+Y)
+uniform sampler2D uSkyboxNegY;   // Bottom face (-Y)
+uniform sampler2D uSkyboxPosZ;   // Front face (+Z)
+uniform sampler2D uSkyboxNegZ;   // Back face (-Z)
+uniform bool uUseSkybox;         // Toggle between skybox and procedural sky
+uniform int uBackgroundMode;     // 0=black, 1=tunnel, 2=skybox
+
 varying vec2 vTextureCoord;
 
 #define EPSILON .0001
@@ -127,6 +137,152 @@ vec4 safeTextureSample(sampler2D tex, vec2 uv) {
         return vec4(0.0, 0.0, 0.0, 0.0); // Return transparent black for out-of-bounds samples
     }
     return texture2D(tex, uv);
+}
+
+// Simple noise function for cloud generation
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+// Fractal Brownian Motion for cloud generation
+float fbm(vec2 p) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+    
+    for (int i = 0; i < 4; i++) {
+        value += amplitude * noise(p * frequency);
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    
+    return value;
+}
+
+// Cubemap skybox sampling function
+vec3 sampleCubemap(vec3 rayDir) {
+    vec3 absDir = abs(rayDir);
+    vec2 uv;
+    vec4 color;
+    
+    // Determine which face to sample based on the largest component
+    if (absDir.x >= absDir.y && absDir.x >= absDir.z) {
+        // X face (left or right)
+        if (rayDir.x > 0.0) {
+            // Positive X (right face)
+            uv = vec2(-rayDir.z / rayDir.x, -rayDir.y / rayDir.x);
+            uv = uv * 0.5 + 0.5; // Map from [-1,1] to [0,1]
+            color = texture2D(uSkyboxPosX, uv);
+        } else {
+            // Negative X (left face)
+            uv = vec2(rayDir.z / -rayDir.x, -rayDir.y / -rayDir.x);
+            uv = uv * 0.5 + 0.5;
+            color = texture2D(uSkyboxNegX, uv);
+        }
+    } else if (absDir.y >= absDir.x && absDir.y >= absDir.z) {
+        // Y face (top or bottom)
+        if (rayDir.y > 0.0) {
+            // Positive Y (top face)
+            uv = vec2(rayDir.x / rayDir.y, rayDir.z / rayDir.y);
+            uv = uv * 0.5 + 0.5;
+            color = texture2D(uSkyboxPosY, uv);
+        } else {
+            // Negative Y (bottom face)
+            uv = vec2(rayDir.x / -rayDir.y, -rayDir.z / -rayDir.y);
+            uv = uv * 0.5 + 0.5;
+            color = texture2D(uSkyboxNegY, uv);
+        }
+    } else {
+        // Z face (front or back)
+        if (rayDir.z > 0.0) {
+            // Positive Z (front face)
+            uv = vec2(rayDir.x / rayDir.z, -rayDir.y / rayDir.z);
+            uv = uv * 0.5 + 0.5;
+            color = texture2D(uSkyboxPosZ, uv);
+        } else {
+            // Negative Z (back face)
+            uv = vec2(-rayDir.x / -rayDir.z, -rayDir.y / -rayDir.z);
+            uv = uv * 0.5 + 0.5;
+            color = texture2D(uSkyboxNegZ, uv);
+        }
+    }
+    
+    return color.rgb;
+}
+
+vec3 getSkyColor(vec3 rayDir, float time) {
+    // Check background mode: 0=black, 1=tunnel, 2=skybox
+    if (uBackgroundMode == 2) {
+        // Skybox mode
+        return sampleCubemap(rayDir);
+    } else if (uBackgroundMode == 1) {
+        // Tunnel mode - Abstract moving tunnel effect
+        // Convert ray direction to cylindrical coordinates for tunnel effect
+        float angle = atan(rayDir.x, rayDir.z);
+        float radius = length(rayDir.xz);
+        float depth = rayDir.y;
+        
+        // Create tunnel coordinates
+        float tunnelRadius = 1.0 / max(radius, 0.1); // Inverse for tunnel effect
+        float tunnelAngle = angle + time * 0.3; // Rotating tunnel
+        float tunnelDepth = depth + time * 0.5; // Moving forward through tunnel
+        
+        // Multiple layers of tunnel patterns
+        vec3 color = vec3(0.0);
+        
+        // Layer 1: Main tunnel structure
+        float tunnel1 = sin(tunnelRadius * 8.0 + tunnelDepth * 4.0) * 0.5 + 0.5;
+        float rings1 = sin(tunnelAngle * 6.0 + time * 2.0) * 0.5 + 0.5;
+        vec3 color1 = vec3(0.2, 0.4, 0.8) * tunnel1 * rings1;
+        
+        // Layer 2: Secondary patterns
+        float tunnel2 = sin(tunnelRadius * 12.0 - tunnelDepth * 6.0 + time) * 0.5 + 0.5;
+        float rings2 = cos(tunnelAngle * 8.0 - time * 1.5) * 0.5 + 0.5;
+        vec3 color2 = vec3(0.8, 0.2, 0.6) * tunnel2 * rings2;
+        
+        // Layer 3: Fine details
+        float tunnel3 = fbm(vec2(tunnelRadius * 20.0, tunnelAngle * 10.0 + time * 3.0)) * 0.5 + 0.5;
+        float depth3 = sin(tunnelDepth * 10.0 + time * 4.0) * 0.5 + 0.5;
+        vec3 color3 = vec3(0.4, 0.8, 0.3) * tunnel3 * depth3;
+        
+        // Combine layers with different blend modes
+        color = color1 * 0.4 + color2 * 0.3 + color3 * 0.2;
+        
+        // Add some energy pulses
+        float pulse = sin(time * 5.0) * 0.5 + 0.5;
+        float energyRing = smoothstep(0.8, 1.0, sin(tunnelRadius * 15.0 + time * 8.0));
+        color += vec3(1.0, 0.5, 0.0) * energyRing * pulse * 0.3;
+        
+        // Add depth-based color shifting
+        float depthShift = sin(tunnelDepth * 3.0 + time * 2.0) * 0.5 + 0.5;
+        color = mix(color, color.zxy, depthShift * 0.3); // Cycle RGB channels
+        
+        // Add some sparkles/stars
+        vec2 sparkleCoord = vec2(tunnelAngle * 20.0, tunnelRadius * 30.0);
+        float sparkle = smoothstep(0.98, 1.0, fbm(sparkleCoord + time * 2.0));
+        color += vec3(1.0) * sparkle * 0.5;
+        
+        // Enhance contrast and add glow
+        color = pow(color, vec3(0.8)); // Gamma correction for more vibrant colors
+        color *= 1.2; // Boost brightness
+        
+        // Add subtle vignette effect to enhance tunnel feeling
+        float vignette = 1.0 - smoothstep(0.5, 1.5, radius);
+        color *= mix(0.3, 1.0, vignette);
+        
+        return clamp(color, 0.0, 1.0);
+    } else {
+        // Black background mode (default)
+        return vec3(0.0, 0.0, 0.0);
+    }
 }
 
 struct Light {
@@ -477,7 +633,11 @@ vec4 calcLighting(vec3 samplePos, vec3 eye, Light light, Material material) {
 }
 
 vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
-    if (length(pos - eye) > MAX_DEPTH - EPSILON) return vec4(0.0);
+    if (length(pos - eye) > MAX_DEPTH - EPSILON) {
+        // Ray didn't hit anything - render sky
+        vec3 skyColor = getSkyColor(dir, iTime);
+        return vec4(skyColor, 1.0);
+    }
 
     // Check if this point is on a text billboard
     for (int i = 0; i < MAX_ORBS; i++) {
@@ -535,7 +695,9 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
             if (length(deepPos - eye) < MAX_DEPTH - EPSILON) {
                 return calcLighting(deepPos, eye, light, material);
             } else {
-                return vec4(0.0, 0.0, 0.0, 1.0); // Black background
+                // No object behind transparent area - render sky instead of black
+                vec3 skyColor = getSkyColor(dir, iTime);
+                return vec4(skyColor, 1.0);
             }
         }
 
@@ -586,9 +748,10 @@ vec4 shade(vec3 pos, vec3 dir, vec3 eye, Light light, Material material) {
                 vec4 backgroundColor = calcLighting(deepPos, eye, light, material);
                 return mix(backgroundColor, litColor, chromaAlpha);
             } else {
-                // No object behind transparent area - return black background
-                vec4 blackBackground = vec4(0.0, 0.0, 0.0, 1.0);
-                return mix(blackBackground, litColor, chromaAlpha);
+                // No object behind transparent area - render sky instead of black
+                vec3 skyColor = getSkyColor(dir, iTime);
+                vec4 skyBackground = vec4(skyColor, 1.0);
+                return mix(skyBackground, litColor, chromaAlpha);
             }
         }
         

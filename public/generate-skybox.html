@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Skybox Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #222; color: white; }
+        canvas { border: 1px solid #666; margin: 10px; }
+        .face { display: inline-block; text-align: center; margin: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #444; color: white; border: none; cursor: pointer; }
+        button:hover { background: #666; }
+    </style>
+</head>
+<body>
+    <h1>🌌 Skybox Texture Generator</h1>
+    <p>This generates simple gradient skybox textures for testing. Right-click each canvas and "Save image as..." to save them to your skybox folder.</p>
+    
+    <button onclick="generateSkybox()">Generate Skybox Textures</button>
+    <button onclick="downloadAll()">Download All (if supported)</button>
+    
+    <div id="skyboxContainer"></div>
+
+    <script>
+        function generateSkybox() {
+            const container = document.getElementById('skyboxContainer');
+            container.innerHTML = '';
+            
+            const size = 512;
+            const faces = [
+                { name: 'right.jpg', label: 'Right (+X)', colors: ['#87CEEB', '#FFB6C1', '#87CEEB'] },
+                { name: 'left.jpg', label: 'Left (-X)', colors: ['#87CEEB', '#DDA0DD', '#87CEEB'] },
+                { name: 'top.jpg', label: 'Top (+Y)', colors: ['#191970', '#4169E1', '#87CEEB'] },
+                { name: 'bottom.jpg', label: 'Bottom (-Y)', colors: ['#228B22', '#32CD32', '#90EE90'] },
+                { name: 'front.jpg', label: 'Front (+Z)', colors: ['#87CEEB', '#FFA07A', '#87CEEB'] },
+                { name: 'back.jpg', label: 'Back (-Z)', colors: ['#87CEEB', '#F0E68C', '#87CEEB'] }
+            ];
+            
+            faces.forEach(face => {
+                const faceDiv = document.createElement('div');
+                faceDiv.className = 'face';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                canvas.title = `Right-click to save as ${face.name}`;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Create gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, size);
+                gradient.addColorStop(0, face.colors[0]);
+                gradient.addColorStop(0.5, face.colors[1]);
+                gradient.addColorStop(1, face.colors[2]);
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+                
+                // Add some simple clouds/texture
+                ctx.globalAlpha = 0.3;
+                for (let i = 0; i < 20; i++) {
+                    const x = Math.random() * size;
+                    const y = Math.random() * size;
+                    const radius = Math.random() * 50 + 20;
+                    
+                    const cloudGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                    cloudGradient.addColorStop(0, 'white');
+                    cloudGradient.addColorStop(1, 'transparent');
+                    
+                    ctx.fillStyle = cloudGradient;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+                
+                const label = document.createElement('div');
+                label.textContent = face.label;
+                label.style.fontWeight = 'bold';
+                
+                const filename = document.createElement('div');
+                filename.textContent = face.name;
+                filename.style.fontSize = '12px';
+                filename.style.color = '#aaa';
+                
+                faceDiv.appendChild(label);
+                faceDiv.appendChild(filename);
+                faceDiv.appendChild(canvas);
+                container.appendChild(faceDiv);
+            });
+        }
+        
+        function downloadAll() {
+            const canvases = document.querySelectorAll('canvas');
+            const faces = ['right.jpg', 'left.jpg', 'top.jpg', 'bottom.jpg', 'front.jpg', 'back.jpg'];
+            
+            canvases.forEach((canvas, index) => {
+                const link = document.createElement('a');
+                link.download = faces[index];
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            });
+        }
+        
+        // Generate on page load
+        window.onload = generateSkybox;
+    </script>
+</body>
+</html> 

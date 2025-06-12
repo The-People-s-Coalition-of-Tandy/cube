@@ -404,11 +404,6 @@ body {
     /* font-size: 10px; Even smaller */
 }
 
-.event-weird {
-    /* color: #cc6666; */
-    font-weight: normal; /* Less bold */
-}
-
 .calendar-note {
     font-size: 8px; /* Reduced from 10px */
     color: #555; /* Dimmed */
