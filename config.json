@@ -11,7 +11,7 @@
         0,
         0
       ],
-      "threshold": 0.5
+      "threshold": 0.1
     }
   },
   "scene": {
@@ -40,7 +40,7 @@
             1,
             1
           ],
-          "intensity": 3,
+          "intensity": 3.25,
           "effect": 1,
           "enabled": true
         },
@@ -94,7 +94,7 @@
     },
     "backgroundMode": "black"
   },
-  "lastUpdated": 1749706003770,
+  "lastUpdated": 1749789402353,
   "version": 1,
   "m3u8Url": "./assets/kat.mp4",
   "chromaKey": {
@@ -107,10 +107,10 @@
     "threshold": 0.5
   },
   "videoPlane": {
-    "size": 0.5,
+    "size": 0.68,
     "position": [
       0,
-      1.12,
+      1.38,
       0
     ]
   },

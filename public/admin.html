@@ -1322,7 +1322,7 @@
             const urls = {
                 live: 'https://live.pcotandy.org/hls/stream.m3u8',
                 mp4: './assets/kat.mp4',
-                test: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
+                test: './assets/tandyspin.mp4'
             };
             
             document.getElementById('streamUrl').value = urls[type] || '';
@@ -1353,7 +1353,7 @@
         async function emergencyFallback() {
             const config = {
                 video: {
-                    m3u8Url: './assets/kat.mp4'
+                    m3u8Url: './assets/tandyspin.mp4'
                 }
             };
             
@@ -1381,7 +1381,7 @@
             if (confirm('Reset all settings to defaults? This cannot be undone.')) {
                 const config = {
                     video: {
-                        m3u8Url: './assets/kat.mp4',
+                        m3u8Url: './assets/tandyspin.mp4',
                         brightness: 1,
                         contrast: 1,
                         saturation: 1,
