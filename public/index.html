@@ -1010,7 +1010,22 @@
             console.log('Waiting 1 second before showing Blueby...');
             setTimeout(() => {
                 // Now show Blueby after intro is complete
-                showBlueby();
+                // check if local storage has a username
+                if (!localStorage.getItem('cubeUsername')) {
+                    showBlueby();
+                } else {
+                    console.log('Username already exists, connecting to WebSocket...');
+                    console.log(localStorage.getItem('cubeUsername'));
+                    console.log(localStorage.getItem('cubeOrbColor'));
+
+                    // Enable controls now that user has joined
+                hasJoinedCube = true;
+                
+                // Enable chat input since user is joining (bypassing tutorial)
+                const chatInputContainer = document.getElementById('chatInputContainer');
+                chatInputContainer.classList.add('tutorial-complete');
+                    connectWebSocketWithUserData(localStorage.getItem('cubeUsername'), localStorage.getItem('cubeOrbColor'));
+                }
             }, 1000);
         }
 
@@ -1053,6 +1068,10 @@
             "Press <strong>C</strong> to cycle camera modes.",
             "Press <strong>/</strong> to open chat. Enjoy the show!"
         ];
+
+        const welcomeBackMessages = [
+            "NAME, is that you? Welcome back to the cube!",
+        ]
         
         let currentMessageIndex = 0;
         let isTyping = false;
