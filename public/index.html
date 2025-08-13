@@ -1330,6 +1330,9 @@
         function showBlueby() {
             // Don't show mascot on mobile devices since camera controls don't apply
             if (isMobile) {
+                // Enable controls now that user has joined
+                hasJoinedCube = true;
+                
                 // Enable chat input immediately for mobile users since tutorial won't run
                 const chatInputContainer = document.getElementById('chatInputContainer');
                 chatInputContainer.classList.add('tutorial-complete');
