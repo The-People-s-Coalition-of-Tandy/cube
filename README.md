@@ -1,10 +1,10 @@
 # The Tandy Cube - Live Virtual Performance Venue
 
-A 3D virtual performance space with livestream integration and MP4 fallback support.
+A 3D virtual performance space with livestream integration, webcam passthrough for live performances, and MP4 fallback support.
 
 ## Video Configuration
 
-This application supports both livestream and MP4 fallback video sources for maximum reliability.
+This application supports livestream, webcam passthrough, and MP4 fallback video sources for maximum flexibility in live performances.
 
 ### Configuration Variables
 
@@ -13,8 +13,19 @@ Edit these variables in `public/index.html` (around line 620) to control video b
 ```javascript
 // Video Configuration - Edit these to control video source behavior
 const USE_MP4_INSTEAD_OF_LIVESTREAM = false; // Set to true to bypass livestream and use MP4
+const USE_WEBCAM_MODE = false; // Set to true to use webcam for live performances
 const MP4_FALLBACK_URL = './fallback-video.mp4'; // Path to your MP4 fallback file
-const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before falling back to MP4
+const LIVESTREAM_TIMEOUT = 30000; // 30 seconds timeout for livestream before falling back to MP4
+
+// Webcam Configuration
+const WEBCAM_CONSTRAINTS = {
+    video: {
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+        frameRate: { ideal: 30, min: 24 }
+    },
+    audio: true
+};
 ```
 
 ### Setup Instructions
@@ -24,8 +35,9 @@ const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before fa
    - Update `MP4_FALLBACK_URL` to point to your file (e.g., `'./my-video.mp4'`)
 
 2. **Choose your mode:**
-   - **Livestream with fallback** (default): Set `USE_MP4_INSTEAD_OF_LIVESTREAM = false`
-   - **MP4 only**: Set `USE_MP4_INSTEAD_OF_LIVESTREAM = true`
+   - **Livestream with fallback** (default): Set `USE_MP4_INSTEAD_OF_LIVESTREAM = false` and `USE_WEBCAM_MODE = false`
+   - **Live Performance Webcam**: Set `USE_WEBCAM_MODE = true`
+   - **MP4 only**: Set `USE_MP4_INSTEAD_OF_LIVESTREAM = true` and `USE_WEBCAM_MODE = false`
 
 3. **Adjust timeout** (optional):
    - Change `LIVESTREAM_TIMEOUT` to control how long to wait for livestream before falling back
@@ -44,9 +56,17 @@ const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before fa
 3. MP4 video loops continuously
 4. UI shows "RECORDED" status
 
+#### Live Performance Webcam Mode
+1. Application accesses your webcam directly using WebRTC
+2. Real-time video feed is displayed in the cube
+3. Supports multiple cameras and camera switching
+4. Audio from webcam is included in the performance
+5. UI shows "LIVE WEBCAM" with green dot
+
 ### Visual Indicators
 
-- **🔴 LIVE** - Livestream is active and working
+- **🟢 LIVE WEBCAM** - Webcam is active for live performance
+- **🔴 LIVE STREAM** - Livestream is active and working
 - **🟠 RECORDED** - Using MP4 fallback content
 - **🟠 ERROR** - Video content failed to load
 
@@ -72,6 +92,30 @@ const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before fa
 - **MP4 Fallback**: Supported in all modern browsers
 - **Safari**: Uses native HLS support when available
 
+## Live Performance Controls
+
+### Performance Panel
+Press **'P'** to toggle the Live Performance control panel, which allows you to:
+
+- **🎥 WEBCAM**: Switch to webcam mode for live performance
+- **📡 STREAM**: Switch to livestream mode  
+- **🎬 MP4**: Switch to MP4 playback mode
+- **Camera Selection**: Choose from available cameras when in webcam mode
+
+### Webcam Features
+- **Multi-camera support**: Automatically detects and lists available cameras
+- **Real-time switching**: Change cameras during live performance without interruption
+- **High-quality settings**: Defaults to 1080p@30fps with fallback to 720p@24fps
+- **Audio included**: Webcam audio is captured and processed through the cube's audio system
+- **Automatic fallback**: If webcam fails, automatically falls back to MP4 mode
+
+### Browser Permissions
+When using webcam mode, your browser will request permission to access:
+- **Camera**: Required for video feed
+- **Microphone**: Required for audio (can be disabled in WEBCAM_CONSTRAINTS)
+
+Make sure to **allow** these permissions for the live performance features to work.
+
 ## Camera Controls
 
 ### Keyboard Controls
@@ -82,6 +126,7 @@ const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before fa
 - C: Cycle camera modes (polar → free-fly → look-at)
 - L: Toggle look-at stage mode
 - F: Toggle film mode (smooth camera movement for recording)
+- P: Toggle live performance control panel
 
 ### Gamepad Controls
 - Left Stick: Move camera (forward/back/left/right with analog precision)
@@ -95,6 +140,13 @@ const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before fa
 1. **Polar Mode**: Automatic rotation around the cube
 2. **Free-fly Mode**: Full manual control with mouse look
 3. **Look-at Mode**: Manual movement while always looking at the stage
+
+### Camera Presets (Number Keys 1-9, 0)
+The cube includes 10 preset camera positions optimized for filming performances:
+- **Smooth Transitions**: Presets now smoothly ease into position over 1.5 seconds instead of jumping
+- **Interruptible**: Start manual movement (WASD) to interrupt a transition
+- **Chain Transitions**: Press another preset key to smoothly transition to the new position
+- **Look-at Integration**: All presets automatically look at the performer during and after transition
 
 ### Film Mode
 Film mode provides smooth, cinematic camera movement perfect for recording:
