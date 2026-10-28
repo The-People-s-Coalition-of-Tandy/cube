@@ -239,89 +239,6 @@
         <div id="cameraMode" style="font-size: 12px; opacity: 0.7;">📱 Mobile Camera</div>
     </div>
     
-    <!-- Live Performance Controls -->
-    <div id="performanceControls" style="
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        border: 1px solid #333;
-        border-radius: 8px;
-        padding: 15px;
-        color: white;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        min-width: 200px;
-        z-index: 1000;
-        display: none;
-    ">
-        <h3 style="margin: 0 0 10px 0; color: #00ff00;">LIVE PERFORMANCE</h3>
-        
-        <div style="margin-bottom: 10px;">
-            <strong>Video Source:</strong>
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-            <button id="webcamModeBtn" onclick="switchToWebcamMode()" style="
-                background: #00ff00;
-                color: black;
-                border: none;
-                padding: 5px 10px;
-                margin: 2px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 11px;
-            ">🎥 WEBCAM</button>
-            
-            <button id="streamModeBtn" onclick="switchToStreamMode()" style="
-                background: #333;
-                color: white;
-                border: 1px solid #666;
-                padding: 5px 10px;
-                margin: 2px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 11px;
-            ">📡 STREAM</button>
-            
-            <button id="mp4ModeBtn" onclick="switchToMP4Mode()" style="
-                background: #333;
-                color: white;
-                border: 1px solid #666;
-                padding: 5px 10px;
-                margin: 2px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 11px;
-            ">🎬 MP4</button>
-        </div>
-        
-        <div id="webcamControls" style="display: none;">
-            <div style="margin-bottom: 10px;">
-                <strong>Camera:</strong>
-            </div>
-            <select id="cameraSelect" onchange="handleCameraChange()" style="
-                background: #222;
-                color: white;
-                border: 1px solid #666;
-                padding: 4px;
-                width: 100%;
-                margin-bottom: 10px;
-                border-radius: 4px;
-            ">
-                <option>Loading cameras...</option>
-            </select>
-            
-            <div style="font-size: 10px; opacity: 0.7;">
-                📹 Select camera for live feed
-            </div>
-        </div>
-        
-        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; font-size: 10px; opacity: 0.7;">
-            Press 'P' to toggle this panel
-        </div>
-    </div>
-    
     <!-- Camera Presets Guide -->
     <div id="presetGuide" style="
         position: fixed;
@@ -699,12 +616,6 @@
         }
 
         function updateVideoSource(newUrl) {
-            // If we're in webcam mode, stop webcam first
-            if (isUsingWebcam) {
-                console.log('🎥 Stopping webcam to switch to URL source...');
-                stopWebcam();
-            }
-            
             if (newUrl === currentVideoUrl) {
                 console.log('🔄 Video source unchanged, skipping update:', newUrl);
                 return;
@@ -793,37 +704,15 @@
 
         // Video Configuration - Edit these to control video source behavior
         const USE_MP4_INSTEAD_OF_LIVESTREAM = false; // Set to true to bypass livestream and use MP4
-        const USE_WEBCAM_MODE = true; // Set to true to use webcam for live performances
         const MP4_FALLBACK_URL = './assets/tandyspin.mp4'; // Path to your MP4 fallback file
         const LIVESTREAM_TIMEOUT = 30000; // 30 seconds timeout for livestream before falling back to MP4 (increased from 10s)
-        let USE_AUTO_FLY_MODE = true; // Set to true to use auto-fly mode
-        
-        // Webcam Configuration
-        const WEBCAM_CONSTRAINTS = {
-            video: {
-                width: { ideal: 1920, min: 1280 },
-                height: { ideal: 1080, min: 720 },
-                frameRate: { ideal: 30, min: 24 }
-            },
-            audio: true
-        };
-        
-        // Preset Transition Configuration
-        const PRESET_TRANSITION_DURATION = 5000;
         
         // Log current configuration
         console.log('=== VIDEO CONFIGURATION ===');
         console.log('Use MP4 instead of livestream:', USE_MP4_INSTEAD_OF_LIVESTREAM);
-        console.log('Use webcam mode:', USE_WEBCAM_MODE);
         console.log('MP4 fallback URL:', MP4_FALLBACK_URL);
         console.log('Livestream timeout:', LIVESTREAM_TIMEOUT + 'ms');
-        console.log('Webcam constraints:', WEBCAM_CONSTRAINTS);
         console.log('===========================');
-        
-        console.log('=== CAMERA CONFIGURATION ===');
-        console.log('Preset transition duration:', PRESET_TRANSITION_DURATION + 'ms');
-        console.log('Preset transition easing: easeInOutCubic');
-        console.log('============================');
         
         let gl;
         let program;
@@ -834,12 +723,6 @@
         let videoStarted = false;
         let audioFadeInterval;
         let audioContext;
-        
-        // Webcam-specific variables
-        let webcamStream = null;
-        let isUsingWebcam = true;
-        let availableCameras = [];
-        let currentCameraId = null;
         let audioNodes; // Store audio nodes globally to prevent recreating them
         let isUsingFallback = false; // Track if we're using MP4 fallback
         let livestreamFailed = false; // Track if livestream failed
@@ -903,12 +786,6 @@
         const FILM_ACCELERATION = 0.015; // Increased from 0.003 for faster response
         const FILM_DECELERATION = 0.75; // Changed from 0.85 for smoother deceleration
         const FILM_MAX_SPEED = 0.05;
-        
-        // Smooth mouse rotation variables for film mode
-        let cameraRotVelocity = { x: 0, y: 0 }; // Pitch and yaw velocity
-        const MOUSE_ACCELERATION = 0.2; // How quickly mouse movement affects rotation velocity
-        const MOUSE_DECELERATION = 0.8; // How quickly rotation velocity decays
-        const MOUSE_MAX_SPEED = 0.1; // Maximum rotation speed
 
         // Camera presets for filming - positions that face the performer
         const CAMERA_PRESETS = {
@@ -924,33 +801,19 @@
             '0': { pos: [0.427, 10.267, 0.417], name: 'above' }              // Low angle shot
         };
 
-        // Preset transition variables
-        let presetTransition = {
-            active: false,
-            startPos: [0, 0, 0],
-            targetPos: [0, 0, 0],
-            startTime: 0,
-            duration: PRESET_TRANSITION_DURATION,
-            presetName: ''
-        };
-
         function jumpToPreset(presetKey) {
             const preset = CAMERA_PRESETS[presetKey];
             if (!preset) return;
             
-            console.log(`Smoothly transitioning to camera preset ${presetKey}: ${preset.name}`);
+            console.log(`Jumping to camera preset ${presetKey}: ${preset.name}`);
             
-            // If already transitioning, interrupt previous transition
-            if (presetTransition.active) {
-                console.log('🔄 Interrupting previous transition for new preset');
-            }
+            // Instantly set camera position
+            cameraPos[0] = preset.pos[0];
+            cameraPos[1] = preset.pos[1];
+            cameraPos[2] = preset.pos[2];
             
-            // Store current position as start point (not original start if interrupting)
-            presetTransition.startPos = [cameraPos[0], cameraPos[1], cameraPos[2]];
-            presetTransition.targetPos = [...preset.pos];
-            presetTransition.startTime = Date.now();
-            presetTransition.active = true;
-            presetTransition.presetName = preset.name;
+            // Calculate rotation to look at the performer (stage center)
+            calculateLookAtRotationToTarget(STAGE_TARGET);
             
             // Switch to free-fly mode for manual control after preset
             cameraMode = 1;
@@ -958,32 +821,7 @@
             updateCameraModeIndicator();
             
             // Show preset info briefly
-            // showPresetInfo(`Transitioning to ${preset.name}`);
-        }
-
-        function updatePresetTransition() {
-            if (!presetTransition.active) return;
-            
-            const elapsed = Date.now() - presetTransition.startTime;
-            const progress = Math.min(elapsed / presetTransition.duration, 1.0);
-            
-            // Use smooth easing function
-            const easedProgress = easeInOutCubic(progress);
-            
-            // Smoothly interpolate camera position
-            cameraPos[0] = lerp(presetTransition.startPos[0], presetTransition.targetPos[0], easedProgress);
-            cameraPos[1] = lerp(presetTransition.startPos[1], presetTransition.targetPos[1], easedProgress);
-            cameraPos[2] = lerp(presetTransition.startPos[2], presetTransition.targetPos[2], easedProgress);
-            
-            // Continuously look at the performer during transition
-            calculateLookAtRotationToTarget(STAGE_TARGET);
-            
-            // Check if transition is complete
-            if (progress >= 1.0) {
-                presetTransition.active = false;
-                console.log(`✅ Smooth transition to ${presetTransition.presetName} complete`);
-                // showPresetInfo(`${presetTransition.presetName} - Ready`);
-            }
+            // showPresetInfo(preset.name);
         }
 
         function showPresetInfo(presetName) {
@@ -1712,13 +1550,6 @@
         function initializeVideo() {
             console.log('🎬 Initializing video system...');
             
-            // Check if we should use webcam mode first
-            if (USE_WEBCAM_MODE) {
-                console.log('🎥 Using webcam mode for live performance...');
-                initializeWebcam();
-                return;
-            }
-            
             // Check if we should bypass livestream and use MP4 directly
             if (USE_MP4_INSTEAD_OF_LIVESTREAM) {
                 console.log('Bypassing livestream, loading MP4 directly...');
@@ -1987,272 +1818,7 @@
             });
         }
 
-        // Webcam Functions
-        async function initializeWebcam() {
-            console.log('🎥 Initializing webcam for live performance...');
-            
-            try {
-                // First, get available cameras
-                await getAvailableCameras();
-                
-                // Start webcam with constraints
-                webcamStream = await navigator.mediaDevices.getUserMedia(WEBCAM_CONSTRAINTS);
-                console.log('✅ Webcam stream obtained successfully');
-                
-                // Set the webcam stream as the video source
-                video.srcObject = webcamStream;
-                video.muted = false; // Allow webcam audio
-                isUsingWebcam = true;
-                
-                // Update UI to show webcam mode
-                updateStreamIndicator(true, false, true); // isLive=true, hasError=false, isWebcam=true
-                
-                console.log('🎥 Webcam stream connected to video element');
-                
-                // Reapply shader uniforms to ensure chroma key settings persist
-                if (gl && program && currentConfig) {
-                    console.log('🎨 Reapplying shader uniforms after webcam initialization...');
-                    updateShaderUniforms(currentConfig);
-                }
-                
-            } catch (error) {
-                console.error('❌ Failed to initialize webcam:', error);
-                handleWebcamError(error);
-            }
-        }
-        
-        async function getAvailableCameras() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                availableCameras = devices.filter(device => device.kind === 'videoinput');
-                console.log('📹 Available cameras:', availableCameras.map(cam => cam.label || 'Unknown Camera'));
-                return availableCameras;
-            } catch (error) {
-                console.error('❌ Failed to enumerate cameras:', error);
-                return [];
-            }
-        }
-        
-        async function switchCamera(deviceId) {
-            if (!isUsingWebcam) {
-                console.warn('Not in webcam mode, cannot switch camera');
-                return;
-            }
-            
-            try {
-                console.log('🔄 Switching to camera:', deviceId);
-                
-                // Stop current stream
-                if (webcamStream) {
-                    webcamStream.getTracks().forEach(track => track.stop());
-                }
-                
-                // Create new constraints with specific camera
-                const constraints = {
-                    ...WEBCAM_CONSTRAINTS,
-                    video: {
-                        ...WEBCAM_CONSTRAINTS.video,
-                        deviceId: deviceId ? { exact: deviceId } : undefined
-                    }
-                };
-                
-                // Get new stream
-                webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = webcamStream;
-                currentCameraId = deviceId;
-                
-                console.log('✅ Successfully switched camera');
-                
-            } catch (error) {
-                console.error('❌ Failed to switch camera:', error);
-                handleWebcamError(error);
-            }
-        }
-        
-        function handleWebcamError(error) {
-            console.error('Webcam error details:', error);
-            
-            let errorMessage = 'Webcam access failed';
-            if (error.name === 'NotAllowedError') {
-                errorMessage = 'Camera permission denied';
-            } else if (error.name === 'NotFoundError') {
-                errorMessage = 'No camera found';
-            } else if (error.name === 'NotReadableError') {
-                errorMessage = 'Camera in use by another application';
-            }
-            
-            console.error('📹 Webcam Error:', errorMessage);
-            updateStreamIndicator(false, true); // Show error state
-            
-            // Fallback to MP4 if webcam fails
-            console.log('🔄 Falling back to MP4 due to webcam failure...');
-            isUsingWebcam = false;
-            loadMP4Fallback();
-        }
-        
-        function stopWebcam() {
-            if (webcamStream) {
-                console.log('🛑 Stopping webcam stream...');
-                webcamStream.getTracks().forEach(track => track.stop());
-                webcamStream = null;
-                isUsingWebcam = false;
-                video.srcObject = null;
-                console.log('✅ Webcam stream stopped');
-            }
-        }
-        
-        // Mode switching functions for live performance control
-        async function switchToWebcamMode() {
-            console.log('🎥 Switching to webcam mode...');
-            
-            // Stop any existing video sources
-            if (hls) {
-                cleanupHLS();
-            }
-            video.src = '';
-            
-            // Initialize webcam
-            await initializeWebcam();
-            
-            // Update UI
-            updateModeButtons('webcam');
-            showWebcamControls();
-        }
-        
-        function switchToStreamMode() {
-            console.log('📡 Switching to stream mode...');
-            
-            // Stop webcam if active
-            if (isUsingWebcam) {
-                stopWebcam();
-            }
-            
-            // Initialize livestream
-            initializeLivestream();
-            
-            // Update UI
-            updateModeButtons('stream');
-            hideWebcamControls();
-        }
-        
-        function switchToMP4Mode() {
-            console.log('🎬 Switching to MP4 mode...');
-            
-            // Stop webcam if active
-            if (isUsingWebcam) {
-                stopWebcam();
-            }
-            
-            // Stop any existing HLS
-            if (hls) {
-                cleanupHLS();
-            }
-            
-            // Load MP4 fallback
-            loadMP4Fallback();
-            
-            // Update UI
-            updateModeButtons('mp4');
-            hideWebcamControls();
-        }
-        
-        // UI Management Functions
-        function updateModeButtons(activeMode) {
-            const webcamBtn = document.getElementById('webcamModeBtn');
-            const streamBtn = document.getElementById('streamModeBtn');
-            const mp4Btn = document.getElementById('mp4ModeBtn');
-            
-            // Reset all buttons
-            [webcamBtn, streamBtn, mp4Btn].forEach(btn => {
-                if (btn) {
-                    btn.style.background = '#333';
-                    btn.style.color = 'white';
-                    btn.style.border = '1px solid #666';
-                }
-            });
-            
-            // Highlight active button
-            let activeBtn = null;
-            switch (activeMode) {
-                case 'webcam':
-                    activeBtn = webcamBtn;
-                    break;
-                case 'stream':
-                    activeBtn = streamBtn;
-                    break;
-                case 'mp4':
-                    activeBtn = mp4Btn;
-                    break;
-            }
-            
-            if (activeBtn) {
-                activeBtn.style.background = '#00ff00';
-                activeBtn.style.color = 'black';
-                activeBtn.style.border = 'none';
-            }
-        }
-        
-        function showWebcamControls() {
-            const webcamControls = document.getElementById('webcamControls');
-            if (webcamControls) {
-                webcamControls.style.display = 'block';
-                populateCameraSelect();
-            }
-        }
-        
-        function hideWebcamControls() {
-            const webcamControls = document.getElementById('webcamControls');
-            if (webcamControls) {
-                webcamControls.style.display = 'none';
-            }
-        }
-        
-        async function populateCameraSelect() {
-            const cameraSelect = document.getElementById('cameraSelect');
-            if (!cameraSelect) return;
-            
-            try {
-                await getAvailableCameras();
-                cameraSelect.innerHTML = '';
-                
-                if (availableCameras.length === 0) {
-                    cameraSelect.innerHTML = '<option>No cameras found</option>';
-                    return;
-                }
-                
-                availableCameras.forEach((camera, index) => {
-                    const option = document.createElement('option');
-                    option.value = camera.deviceId;
-                    option.textContent = camera.label || `Camera ${index + 1}`;
-                    if (camera.deviceId === currentCameraId) {
-                        option.selected = true;
-                    }
-                    cameraSelect.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.error('Failed to populate camera select:', error);
-                cameraSelect.innerHTML = '<option>Error loading cameras</option>';
-            }
-        }
-        
-        function handleCameraChange() {
-            const cameraSelect = document.getElementById('cameraSelect');
-            if (cameraSelect && cameraSelect.value && isUsingWebcam) {
-                switchCamera(cameraSelect.value);
-            }
-        }
-        
-        function togglePerformanceControls() {
-            const controls = document.getElementById('performanceControls');
-            if (controls) {
-                const isVisible = controls.style.display !== 'none';
-                controls.style.display = isVisible ? 'none' : 'block';
-                console.log(isVisible ? 'Performance controls hidden' : 'Performance controls shown');
-            }
-        }
-
-        function updateStreamIndicator(isLive, hasError = false, isWebcam = false) {
+        function updateStreamIndicator(isLive, hasError = false) {
             // Target the stream info live indicator specifically, not the event display one
             const streamInfo = document.getElementById('streamInfo');
             const liveIndicator = streamInfo ? streamInfo.querySelector('.live-indicator') : null;
@@ -2267,17 +1833,13 @@
                 return;
             }
             
-            if (isWebcam) {
-                // Webcam is active - show webcam mode
-                liveIndicator.innerHTML = '<div class="live-dot" style="background: #00ff00;"></div><span>LIVE WEBCAM</span>';
-                if (nowPlaying) nowPlaying.textContent = 'Live Performance Mode';
-            } else if (isLive && !isUsingFallback) {
+            if (isLive && !isUsingFallback) {
                 // Livestream is active - but don't override our event display
-                liveIndicator.innerHTML = '<div class="live-dot"></div><span>LIVE STREAM</span>';
+                liveIndicator.innerHTML = '<div class="live-dot"></div><span>STREAM</span>';
                 // Don't override the now playing text - let our event system handle it
             } else {
                 // Using MP4 fallback
-                liveIndicator.innerHTML = '<div class="live-dot" style="background: #ff6600;"></div><span>RECORDED</span>';
+                liveIndicator.innerHTML = '<div class="live-dot"></div><span>STREAM</span>';
                 // Don't override the now playing text - let our event system handle it
             }
         }
@@ -2702,15 +2264,6 @@
             console.log('showMascot called, but we now show Blueby at end of intro instead');
         }
 
-
-            setInterval(() => {
-                if (USE_AUTO_FLY_MODE) {
-                    jumpToPreset(Math.floor(Math.random() * 10));
-                }
-                }, 10000);
-
-    
-
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
             // Skip tutorial with '[' key (for debugging)
@@ -2731,13 +2284,6 @@
                 focusChat();
                 e.preventDefault();
                 e.stopPropagation();
-                return;
-            }
-
-            if (e.key === ']') {
-                USE_AUTO_FLY_MODE = !USE_AUTO_FLY_MODE;
-                console.log('Auto-fly mode:', USE_AUTO_FLY_MODE ? 'ON' : 'OFF');
-                e.preventDefault();
                 return;
             }
             
@@ -2772,12 +2318,6 @@
                 updateCameraModeIndicator();
             }
             
-            // Toggle performance controls with 'P' key
-            if (e.code === 'KeyP') {
-                togglePerformanceControls();
-                e.preventDefault();
-            }
-            
             // Toggle film mode with 'F' key (only on desktop)
             if (e.code === 'KeyF' && !isMobile) {
                 filmMode = !filmMode;
@@ -2786,7 +2326,6 @@
                 // Reset velocity when toggling film mode
                 if (!filmMode) {
                     cameraVelocity = { x: 0, y: 0, z: 0 };
-                    cameraRotVelocity = { x: 0, y: 0 };
                 }
                 
                 updateCameraModeIndicator();
@@ -2828,8 +2367,6 @@
             }
         });
 
-
-
         document.addEventListener('keyup', (e) => {
             // Don't process any controls until user has joined the cube
             if (!hasJoinedCube) {
@@ -2860,22 +2397,11 @@
             }
             
             if (mouseLocked && cameraMode === 1) { // Only in free-fly mode
-                if (filmMode) {
-                    // Film mode: accumulate mouse movement for smooth rotation
-                    cameraRotVelocity.y += e.movementX * MOUSE_SENSITIVITY * MOUSE_ACCELERATION; // yaw
-                    cameraRotVelocity.x += e.movementY * MOUSE_SENSITIVITY * MOUSE_ACCELERATION; // pitch
-                    
-                    // Clamp rotation velocities to max speed
-                    cameraRotVelocity.x = Math.max(-MOUSE_MAX_SPEED, Math.min(MOUSE_MAX_SPEED, cameraRotVelocity.x));
-                    cameraRotVelocity.y = Math.max(-MOUSE_MAX_SPEED, Math.min(MOUSE_MAX_SPEED, cameraRotVelocity.y));
-                } else {
-                    // Normal mode: direct rotation
-                    cameraRot[1] += e.movementX * MOUSE_SENSITIVITY; // yaw
-                    cameraRot[0] += e.movementY * MOUSE_SENSITIVITY; // pitch (not inverted)
-                    
-                    // Clamp pitch to prevent flipping
-                    cameraRot[0] = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRot[0]));
-                }
+                cameraRot[1] += e.movementX * MOUSE_SENSITIVITY; // yaw
+                cameraRot[0] += e.movementY * MOUSE_SENSITIVITY; // pitch (not inverted)
+                
+                // Clamp pitch to prevent flipping
+                cameraRot[0] = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRot[0]));
             } else {
                 mouseX = e.clientX;
                 // Update polar rotation for non-locked mouse (used in polar mode)
@@ -3062,19 +2588,6 @@
                 return;
             }
             
-            // Check if user is trying to manually move camera during preset transition
-            const isManualMovement = keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD'] || 
-                                    keys['Space'] || keys['ShiftLeft'] || keys['ShiftRight'] ||
-                                    keys['GamepadSpace'] || keys['GamepadShift'] ||
-                                    Math.abs(keys['GamepadLeftX']) > 0.1 || Math.abs(keys['GamepadLeftY']) > 0.1;
-            
-            // Interrupt preset transition if user starts manual movement
-            if (presetTransition.active && isManualMovement) {
-                console.log('🎮 Manual movement detected - interrupting preset transition');
-                presetTransition.active = false;
-                showPresetInfo('Manual Control');
-            }
-            
             // Process gamepad input first
             processGamepadInput();
             
@@ -3167,26 +2680,6 @@
                 cameraPos[0] += cameraVelocity.x;
                 cameraPos[1] += cameraVelocity.y;
                 cameraPos[2] += cameraVelocity.z;
-                
-                // Apply smooth mouse rotation in film mode
-                // Apply velocity to rotation
-                cameraRot[0] += cameraRotVelocity.x;
-                cameraRot[1] += cameraRotVelocity.y;
-                
-                // Clamp pitch to prevent flipping
-                cameraRot[0] = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRot[0]));
-                
-                // Apply deceleration to rotation velocity
-                cameraRotVelocity.x *= MOUSE_DECELERATION;
-                cameraRotVelocity.y *= MOUSE_DECELERATION;
-                
-                // Stop very small rotation velocities to prevent jitter
-                if (Math.abs(cameraRotVelocity.x) < 0.0001) {
-                    cameraRotVelocity.x = 0;
-                }
-                if (Math.abs(cameraRotVelocity.y) < 0.0001) {
-                    cameraRotVelocity.y = 0;
-                }
                 
             } else {
                 // Normal mode: direct movement
@@ -4047,7 +3540,6 @@
                 resizeCanvas();
                 updateCamera();
                 updateIntroCamera(); // Update intro camera sequence if active
-                updatePresetTransition(); // Update smooth preset transitions
 
                 // Skip orb processing entirely on mobile for better performance
                 if (!MOBILE_PERFORMANCE_MODE) {
@@ -4776,7 +4268,6 @@
                 
                 if (!filmMode) {
                     cameraVelocity = { x: 0, y: 0, z: 0 };
-                    cameraRotVelocity = { x: 0, y: 0 };
                 }
                 updateCameraModeIndicator();
             }
@@ -5138,7 +4629,6 @@
             }
         });
 
-
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const message = chatInput.value;
@@ -5169,8 +4659,6 @@
         chatInput.addEventListener('keydown', (e) => {
             e.stopPropagation();
         });
-
-
 
         chatInput.addEventListener('keyup', (e) => {
             e.stopPropagation();
