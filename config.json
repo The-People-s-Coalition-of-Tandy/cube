@@ -1,9 +1,5 @@
 {
   "video": {
-    "m3u8Url": "./assets/kat.mp4",
-    "brightness": 1,
-    "contrast": 1,
-    "saturation": 1,
     "chromaKey": {
       "enabled": true,
       "color": [
@@ -11,7 +7,7 @@
         0,
         0
       ],
-      "threshold": 0.5
+      "threshold": 0.3
     }
   },
   "scene": {
@@ -32,16 +28,16 @@
         {
           "position": [
             3,
-            3.5,
-            3
+            2.6,
+            -3.8
           ],
           "color": [
             1,
             1,
             1
           ],
-          "intensity": 3.25,
-          "effect": 1,
+          "intensity": 5,
+          "effect": 0,
           "enabled": true
         },
         {
@@ -92,9 +88,9 @@
       ],
       "activeLightIndex": 0
     },
-    "backgroundMode": "black"
+    "backgroundMode": "skybox"
   },
-  "lastUpdated": 1755053536691,
+  "lastUpdated": 1787877479502,
   "version": 1,
   "m3u8Url": "./assets/kat.mp4",
   "chromaKey": {
@@ -107,11 +103,11 @@
     "threshold": 0.5
   },
   "videoPlane": {
-    "size": 0.5,
+    "size": 3.71,
     "position": [
-      0,
-      1.12,
-      0
+      -0.04,
+      3,
+      0.2
     ]
   },
   "brightness": 1
