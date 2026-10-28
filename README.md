@@ -8,13 +8,13 @@ This application supports both livestream and MP4 fallback video sources for max
 
 ### Configuration Variables
 
-Edit these variables in `public/index.html` (around line 620) to control video behavior:
+Edit these variables in `public/js/cube/config.js` (near the bottom of the file):
 
 ```javascript
 // Video Configuration - Edit these to control video source behavior
 const USE_MP4_INSTEAD_OF_LIVESTREAM = false; // Set to true to bypass livestream and use MP4
-const MP4_FALLBACK_URL = './fallback-video.mp4'; // Path to your MP4 fallback file
-const LIVESTREAM_TIMEOUT = 10000; // 10 seconds timeout for livestream before falling back to MP4
+const MP4_FALLBACK_URL = './assets/tandyspin.mp4'; // Path to your MP4 fallback file
+const LIVESTREAM_TIMEOUT = 30000; // 30 seconds timeout for livestream before falling back to MP4
 ```
 
 ### Setup Instructions
@@ -145,14 +145,41 @@ npm run dev
 ## Project Structure
 
 ```
-├── server.js          # Main server file
-├── package.json       # Dependencies and scripts
-├── .env              # Environment variables
-├── .gitignore        # Git ignore rules
-├── README.md         # This file
-└── public/           # Static files
-    └── index.html    # Main HTML page
+├── server.js              # Entry point: wires middleware, routes and websockets together
+├── server/
+│   ├── auth.js            # Session, requireAuth, admin login/logout/status routes
+│   ├── config-manager.js  # Reads/writes config.json and broadcasts changes
+│   ├── routes.js          # Config, events, live-event, page and /stats routes
+│   ├── websocket.js       # Viewer connections, chat, position/lighting/background messages
+│   ├── viewers.js         # Connected viewers map and broadcast helpers
+│   └── stats.js           # Server stats and periodic logging
+├── config.json            # Scene config (edited live from /admin)
+├── load-test.js           # WebSocket load tester
+├── archive/               # Old shader/page drafts (not served)
+└── public/                # Static files
+    ├── index.html         # Main venue page (markup only)
+    ├── index.css
+    ├── frag.glsl, vert.glsl
+    ├── js/cube/           # Main page scripts, loaded in this order:
+    │   ├── config.js          # Server config, shader uniforms, video settings
+    │   ├── camera.js          # Camera state, presets, intro sequence, movement
+    │   ├── tutorial.js        # Blueby tutorial
+    │   ├── video.js           # HLS livestream and MP4 fallback
+    │   ├── onboarding.js      # Welcome screen, character selection, input listeners
+    │   ├── orbs.js            # Bot/user orbs
+    │   ├── renderer.js        # WebGL setup and render loop (window.onload)
+    │   ├── event-calendar.js  # Current event and calendar display
+    │   ├── gamepad.js
+    │   ├── network.js         # WebSocket client and chat
+    │   └── audio-lighting.js  # Audio context, lighting and background updates
+    ├── admin.html, js/admin.js, css/admin.css
+    ├── calendar.html, js/calendar.js
+    └── login.html, js/login.js, css/login.css
 ```
+
+The `js/cube/` files are plain (non-module) scripts that share one global
+scope, so their load order in `index.html` matters: code that runs at load
+time may only use things defined in the same or an earlier file.
 
 ## Environment Variables
 
@@ -181,9 +208,9 @@ For production deployment:
 
 ## Customization
 
-- Edit `public/index.html` to customize your page
+- Edit `public/index.html` (markup) and `public/js/cube/` (behavior) to customize the venue
 - Add more static files (CSS, JS, images) to the `public/` directory
-- Modify `server.js` to add more routes as needed
+- Add routes in `server/routes.js`, websocket message types in `server/websocket.js`
 
 ## License
 
