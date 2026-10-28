@@ -2138,3 +2138,91 @@ Mobile responsive orb cubes:
         0 0 16px rgba(255, 221, 0, 0.5),
         0 4px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* Moved from the inline <style> block in index.html */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: black;
+    font-family: 'Courier New', monospace;
+    color: white;
+    /* Prevent iOS touch behaviors */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+    overscroll-behavior: none;
+}
+
+canvas {
+    display: block;
+    /* Prevent iOS touch behaviors on canvas */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+/* Make sure character selection is hidden by default */
+#characterSelection {
+    display: none !important;
+}
+
+/* Lighting Board Styles */
+#lightingBoard.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+#lightingBoardToggle.hidden {
+    display: none;
+}
+
+.light-btn, .color-btn, .effect-btn {
+    background: #333;
+    color: #888;
+    border: 1px solid #555;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.light-btn.active, .color-btn.active, .effect-btn.active {
+    background: #00ff00;
+    color: #000;
+    border-color: #00ff00;
+}
+
+.light-btn:hover, .color-btn:hover, .effect-btn:hover {
+    background: #444;
+}
+
+.light-btn.active:hover, .color-btn.active:hover, .effect-btn.active:hover {
+    background: #00cc00;
+}
+
+.color-btn {
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.effect-btn {
+    font-size: 10px;
+}
+
+#lightingBoard.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+    z-index: 9999999;
+}
+
+#lightingBoardToggle.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
